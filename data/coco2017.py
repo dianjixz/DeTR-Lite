@@ -265,7 +265,11 @@ class COCODataset(Dataset):
         img = img[:, :, (2, 1, 0)]
         # to tensor
         img = torch.from_numpy(img).permute(2, 0, 1).float()
-        # img = img.transpose(2, 0, 1)
+        # [x1, y1, x2, y2] -> [cx, cy, w, h]
+        boxes_ = boxes.copy()
+        boxes[:, :2] = (boxes_[:, 2:] + boxes_[:, :2]) / 2.0
+        boxes[:, 2:] = boxes_[:, 2:] - boxes_[:, :2]
+    
         target = np.hstack((boxes, np.expand_dims(labels, axis=1)))
 
         return img, target, height, width, scale, offset
@@ -349,12 +353,12 @@ if __name__ == "__main__":
         img = cv2.imread('-1.jpg')
 
         for box in gt:
-            xmin, ymin, xmax, ymax, _ = box
-            xmin *= img_size
-            ymin *= img_size
-            xmax *= img_size
-            ymax *= img_size
-            img = cv2.rectangle(img, (int(xmin), int(ymin)), (int(xmax), int(ymax)), (0,0,255), 2)
+            cx, cy, bw, bh, _ = box
+            x1 = (cx - bw / 2) * img_size
+            y1 = (cy - bh / 2) * img_size
+            x2 = (cx + bw / 2) * img_size
+            y2 = (cy + bh / 2) * img_size
+            img = cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), (0,0,255), 2)
         cv2.imshow('gt', img)
         # cv2.imwrite(str(i)+'.jpg', img)
         cv2.waitKey(0)
