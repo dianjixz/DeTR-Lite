@@ -111,7 +111,7 @@ class DeTR(nn.Module):
 
     def forward(self, x):
         # backbone
-        x, tgt = self.backbone(x)
+        x = self.backbone(x)
         x = self.input_proj(x)
 
         # transformer
