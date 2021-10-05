@@ -1,5 +1,4 @@
 import torch
-from torch._C import device
 import torch.nn as nn
 from torch.nn.modules import dropout
 from backbone import *
@@ -8,7 +7,7 @@ import math
 
 class DeTR(nn.Module):
     def __init__(self, 
-                 device=device,
+                 device,
                  batch_size=1,
                  img_size=640,
                  num_classes=80,
