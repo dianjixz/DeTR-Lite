@@ -144,7 +144,7 @@ def train():
         device = torch.device("cpu")
     
     # path to save model
-    path_to_save = os.path.join(args.save_folder, args.dataset, args.version)
+    path_to_save = os.path.join(args.save_folder, args.dataset)
     os.makedirs(path_to_save, exist_ok=True)
     
     # dataset and evaluator
