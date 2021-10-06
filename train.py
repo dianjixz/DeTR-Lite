@@ -326,7 +326,6 @@ def train():
                                         
             # to device
             images = images.to(device)
-            targets = targets.to(device)
 
             # forward
             outputs = model(images)
