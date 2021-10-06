@@ -161,7 +161,6 @@ def train():
                                mixup=args.mixup)
 
         evaluator = VOCAPIEvaluator(data_root=data_dir,
-                                    img_size=args.img_size,
                                     device=device,
                                     transform=BaseTransform(args.img_size),
                                     labelmap=VOC_CLASSES)
