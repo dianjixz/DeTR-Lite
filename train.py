@@ -10,7 +10,6 @@ import numpy as np
 from typing import Iterable
 
 import torch
-from torch.distributed.distributed_c10d import get_world_size
 import torch.backends.cudnn as cudnn
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
@@ -25,7 +24,6 @@ from evaluator.vocapi_evaluator import VOCAPIEvaluator
 from utils import distributed_utils
 from utils.augmentations import BasicAugmentation, ColorAugmentation
 from utils.modules import ModelEMA
-from utils.com_flops_params import FLOPs_and_Params
 from utils.match import build_matcher
 from utils.loss import build_criterion
 
