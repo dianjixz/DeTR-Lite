@@ -59,8 +59,7 @@ class MultiHeadAttention(nn.Module):
         # softmax(Q*K^T / sqrt(d_k)) * V ：[B, h, N, N] X [B, h, N, d] = [B, h, N, d]
         out = torch.matmul(attn, v)
         # [B, h, N, d] -> [B, N, h*d]=[B, N, C_out], C_out = h*d
-        print(out.shape)
-        out = out.permute(0, 2, 1, 3).contiguous().view(B, N, -1)
+        out = out.permute(0, 2, 1, 3).contiguous().view(B, NQ, -1)
         
         return self.norm(self.to_out(out)) + query
 
