@@ -201,6 +201,7 @@ def train():
                  num_queries=args.num_queries,
                  hidden_dim=args.hidden_dim,
                  mlp_dim=args.mlp_dim,
+                 dropout=args.dropout,
                  aux_loss=not args.no_aux_loss,
                  backbone=args.backbone).to(device)
     # build matcher

@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from torch.nn.modules import dropout
-from .backbone import resnet18, resnet50, resnet101
+from .backbone import resnet18, resnet34, resnet50, resnet101
 from .transformer import Transformer
 from utils.modules import MLP
 import math
@@ -19,6 +19,7 @@ class DeTR(nn.Module):
                  num_queries=100,
                  hidden_dim=256,
                  mlp_dim=2048,
+                 dropout=0.1,
                  aux_loss=False,
                  criterion=None,
                  backbone='r50'):
@@ -65,7 +66,7 @@ class DeTR(nn.Module):
                                        num_heads=num_heads,
                                        dim_head=hidden_dim // num_heads,
                                        mlp_dim=mlp_dim,
-                                       dropout=dropout,
+                                       dropout=self.dropout,
                                        act='relu',
                                        return_intermediate=True)
 
