@@ -48,6 +48,8 @@ class MultiHeadAttention(nn.Module):
         # [B, N, h*d] -> [B, N, h, d] -> [B, h, N, d]
         q = self.to_q(query).view(B, N, self.heads, self.dim_head).permute(0, 2, 1, 3).contiguous()
         k = self.to_k(key).view(B, N, self.heads, self.dim_head).permute(0, 2, 1, 3).contiguous()
+        print(q.shape, k.shape, value.shape)
+        print(self.to_v(value).shape)
         v = self.to_v(value).view(B, N, self.heads, self.dim_head).permute(0, 2, 1, 3).contiguous()
 
         # Q*K^T / sqrt(d_k) : [B, h, N, d] X [B, h, d, N] = [B, h, N, N]
