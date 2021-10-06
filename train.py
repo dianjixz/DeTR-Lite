@@ -7,7 +7,6 @@ import cv2
 import sys
 import math
 import numpy as np
-from typing import Iterable
 
 import torch
 import torch.backends.cudnn as cudnn
@@ -43,28 +42,26 @@ def parse_args():
                         help='lr for backbone')
     parser.add_argument('-size', '--img_size', default=640, type=int, 
                         help='image size.')
+    parser.add_argument('--clip_max_norm', default=0.1, type=float,
+                        help='gradient clipping max norm')
+    parser.add_argument('--max_epoch', type=int, default=150, 
+                        help='max epoch to train')
+    parser.add_argument('--eval_epoch', type=int, default=10, 
+                        help='interval between evaluations')
+    parser.add_argument('--vis', action='store_true', default=False,
+                        help='visualize target.')
+
+    # Train
     parser.add_argument('--start_epoch', type=int, default=0,
                         help='start epoch to train')
     parser.add_argument('-r', '--resume', default=None, type=str, 
                         help='keep training')
-    parser.add_argument('--num_workers', default=8, type=int, 
-                        help='Number of workers used in dataloading')
-    parser.add_argument('--max_epoch', type=int, default=150, 
-                        help='max epoch to train')
-    parser.add_argument('--lr_drop', type=int, default=100, 
-                        help='lr decay epoch')
-    parser.add_argument('--wp_epoch', type=int, default=1, 
-                        help='wram-up epoch')
-    parser.add_argument('--eval_epoch', type=int, default=10, 
-                        help='interval between evaluations')
-    parser.add_argument('--clip_max_norm', default=0.1, type=float,
-                        help='gradient clipping max norm')
     parser.add_argument('--tfboard', action='store_true', default=False,
                         help='use tensorboard')
-    parser.add_argument('--save_folder', default='weights/', type=str, 
-                        help='Gamma update for SGD')
-    parser.add_argument('--vis', action='store_true', default=False,
-                        help='visualize target.')
+
+    # data loader
+    parser.add_argument('--num_workers', default=8, type=int, 
+                        help='Number of workers used in dataloading')
 
     # Matcher
     parser.add_argument('--set_cost_class', default=1, type=float,
@@ -114,6 +111,10 @@ def parse_args():
                         help='use ema training trick')
     parser.add_argument('--no_warmup', action='store_true', default=False,
                         help='do not use warmup')
+    parser.add_argument('--wp_epoch', type=int, default=1, 
+                        help='wram-up epoch')
+    parser.add_argument('--lr_drop', type=int, default=100, 
+                        help='lr decay epoch')
 
     # train DDP
     parser.add_argument('-dist', '--distributed', action='store_true', default=False,
@@ -146,7 +147,7 @@ def train():
         device = torch.device("cpu")
     
     # path to save model
-    path_to_save = os.path.join(args.save_folder, args.dataset)
+    path_to_save = os.path.join('weights/', args.dataset)
     os.makedirs(path_to_save, exist_ok=True)
     
     # dataset and evaluator
@@ -202,7 +203,7 @@ def train():
                  mlp_dim=args.mlp_dim,
                  dropout=args.dropout,
                  aux_loss=not args.no_aux_loss,
-                 backbone=args.backbone).to(device)
+                 backbone=args.backbone).to(device).train()
     # build matcher
     matcher = build_matcher(args)
     # build criterion
