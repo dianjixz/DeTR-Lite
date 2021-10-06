@@ -131,8 +131,6 @@ class TransformerDecoderLayer(nn.Module):
     def forward(self, tgt, memory, pos=None, query_pos=None):
         # memory is the output of the last encoder
         # x -> [B, N, d_in]
-        print(tgt.shape)
-        print(query_pos.shape)
         q0 = k0 = tgt if query_pos is None else tgt + query_pos
         v0 = tgt
         tgt = self.attn_0(q0, k0, v0)
@@ -225,7 +223,7 @@ class Transformer(nn.Module):
         # [N, C] -> [1, N, C] -> [B, N, C]
         query_pos = query_pos.unsqueeze(0).repeat(bs, 1, 1)
 
-        tgt = torch.zeros_like(query_pos).repeat(bs, 1, 1)
+        tgt = torch.zeros_like(query_pos)
         print(tgt.shape)
         # encoder
         memory = self.encoder(x, pos)
