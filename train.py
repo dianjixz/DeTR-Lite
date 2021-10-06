@@ -327,7 +327,7 @@ def train():
             # to device
             images = images.to(device)
             targets = [{"labels": v["labels"].to(device), 
-                        "bboxes": v["bboxes"].to(device)} for v in targets]
+                        "boxes":  v["boxes"].to(device)} for v in targets]
 
             print(targets)
 
