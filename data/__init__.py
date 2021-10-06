@@ -23,7 +23,7 @@ def detection_collate(batch):
     for sample in batch:
         imgs.append(sample[0])
         targets.append(sample[1])
-    return torch.stack(imgs, 0), torch.stack(targets, 0)
+    return torch.stack(imgs, 0), targets
 
 
 def base_transform(img, size, mean, std, boxes=None):

@@ -218,9 +218,7 @@ class Transformer(nn.Module):
     def forward(self, x, tgt, pos=None, query_pos=None):
         bs, c, h, w = x.size()
         # [B, C, H, W] -> [B, C, HW] -> [B, HW, C]
-        print('tr, ', x.shape)
         x = x.flatten(2).permute(0, 2, 1)
-        print('tr2, ', x.shape)
         pos = pos.flatten(2).permute(0, 2, 1)
         # [N, C] -> [1, N, C] -> [B, N, C]
         query_pos = query_pos.unsqueeze(0).repeat(bs, 1, 1)

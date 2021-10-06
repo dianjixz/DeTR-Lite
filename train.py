@@ -209,9 +209,6 @@ def train():
     criterion = build_criterion(args, device, matcher, num_classes)
     criterion.train()
 
-    # compute FLOPs and Params
-    FLOPs_and_Params(model, args.img_size, device)
-
     # DDP
     model_without_ddp = model
     if args.distributed:

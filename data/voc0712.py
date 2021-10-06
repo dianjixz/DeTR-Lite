@@ -268,9 +268,9 @@ class VOCDetection(data.Dataset):
         boxes[:, :2] = (boxes_[:, 2:] + boxes_[:, :2]) / 2.0
         boxes[:, 2:] = boxes_[:, 2:] - boxes_[:, :2]
     
-        target = np.hstack((boxes, np.expand_dims(labels, axis=1)))
+        target_dict = {"labels": labels, "boxes": boxes}
 
-        return img, target, height, width, scale, offset
+        return img, target_dict, height, width, scale, offset
 
 
     def pull_image(self, index):

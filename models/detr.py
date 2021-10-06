@@ -37,8 +37,6 @@ class DeTR(nn.Module):
 
         # position embedding
         self.pos_embed = self.position_embedding(batch_size, 
-                                                 self.img_size // 32,
-                                                 self.img_size // 32,
                                                  num_pos_feats=hidden_dim//2)
         # object query
         self.query_embed = nn.Embedding(num_queries, hidden_dim)
@@ -78,7 +76,7 @@ class DeTR(nn.Module):
 
         
     # Position Embedding
-    def position_embedding(self, B, H, W, num_pos_feats=128, temperature=10000, normalize=False, scale=None):
+    def position_embedding(self, B, num_pos_feats=128, temperature=10000, normalize=False, scale=None):
         h, w = self.img_size // 32, self.img_size // 32
         
         if scale is not None and normalize is False:
@@ -128,7 +126,6 @@ class DeTR(nn.Module):
         # backbone
         x = self.backbone(x)
         x = self.input_proj(x)
-        print('backbone, ', x.shape)
 
         # transformer
         tgt = torch.zeros_like(self.query_embed.weight)
