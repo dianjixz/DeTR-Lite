@@ -174,7 +174,6 @@ class TransformerDecoder(nn.Module):
         intermediate = []
         for m in self.decoders:
             tgt = m(tgt, memory, pos, query_pos)
-            print(tgt.shape)
             if self.return_intermediate:
                 intermediate.append(tgt)
 
