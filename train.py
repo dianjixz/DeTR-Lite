@@ -86,6 +86,8 @@ def parse_args():
                         help="Relative classification weight of the no-object class")
 
     # model 
+    parser.add_argument('-bk', '--backbone', default='r50', type=str, 
+                        help='backbone')
     parser.add_argument('--enc_layers', default=6, type=int,
                         help="Number of encoding layers in the transformer")
     parser.add_argument('--dec_layers', default=6, type=int,
