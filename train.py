@@ -51,7 +51,7 @@ def parse_args():
                         help='keep training')
     parser.add_argument('--num_workers', default=8, type=int, 
                         help='Number of workers used in dataloading')
-    parser.add_argument('--args.max_epoch', type=int, default=150, 
+    parser.add_argument('--max_epoch', type=int, default=150, 
                         help='max epoch to train')
     parser.add_argument('--lr_drop', type=int, default=100, 
                         help='lr decay epoch')
