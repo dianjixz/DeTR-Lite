@@ -43,14 +43,14 @@ class MultiHeadAttention(nn.Module):
         self.norm = nn.LayerNorm(dim)
 
     def forward(self, query, key, value):
-        B, N = query.shape[:2]
-        print(query.shape, key.shape, value.shape)
-        print(self.to_k(key).shape)
+        B, NQ = query.shape[:2]
+        B, NK = key.shape[:2]
+        B, NV = value.shape[:2]
         # Input：x -> [B, N, C_in]
         # [B, N, h*d] -> [B, N, h, d] -> [B, h, N, d]
-        q = self.to_q(query).view(B, N, self.heads, self.dim_head).permute(0, 2, 1, 3).contiguous()
-        k = self.to_k(key).view(B, N, self.heads, self.dim_head).permute(0, 2, 1, 3).contiguous()
-        v = self.to_v(value).view(B, N, self.heads, self.dim_head).permute(0, 2, 1, 3).contiguous()
+        q = self.to_q(query).view(B, NQ, self.heads, self.dim_head).permute(0, 2, 1, 3).contiguous()
+        k = self.to_k(key).view(B, NK, self.heads, self.dim_head).permute(0, 2, 1, 3).contiguous()
+        v = self.to_v(value).view(B, NV, self.heads, self.dim_head).permute(0, 2, 1, 3).contiguous()
 
         # Q*K^T / sqrt(d_k) : [B, h, N, d] X [B, h, d, N] = [B, h, N, N]
         dots = torch.matmul(q, k.transpose(-1, -2)) * self.scale
