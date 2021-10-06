@@ -44,8 +44,6 @@ class MultiHeadAttention(nn.Module):
 
     def forward(self, query, key, value):
         B, N = query.shape[:2]
-        print(query.shape, key.shape, value.shape)
-        print(self.to_v(value).shape)
         # Input：x -> [B, N, C_in]
         # [B, N, h*d] -> [B, N, h, d] -> [B, h, N, d]
         q = self.to_q(query).view(B, N, self.heads, self.dim_head).permute(0, 2, 1, 3).contiguous()
@@ -217,13 +215,15 @@ class Transformer(nn.Module):
             return_intermediate = return_intermediate
         )
 
-    def forward(self, x, tgt, pos=None, query_pos=None):
+    def forward(self, x, pos=None, query_pos=None):
         bs, c, h, w = x.size()
         # [B, C, H, W] -> [B, C, HW] -> [B, HW, C]
         x = x.flatten(2).permute(0, 2, 1)
         pos = pos.flatten(2).permute(0, 2, 1)
         # [N, C] -> [1, N, C] -> [B, N, C]
         query_pos = query_pos.unsqueeze(0).repeat(bs, 1, 1)
+
+        tgt = torch.zeros_like(query_pos).repeat(bs, 1, 1)
         # encoder
         memory = self.encoder(x, pos)
         # decoder

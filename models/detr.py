@@ -128,8 +128,7 @@ class DeTR(nn.Module):
         x = self.input_proj(x)
 
         # transformer
-        tgt = torch.zeros_like(self.query_embed.weight)
-        h = self.transformer(x, tgt, self.pos_embed, self.query_embed.weight)[0]
+        h = self.transformer(x, self.pos_embed, self.query_embed.weight)[0]
 
         # output: [M, B, N, C] where M = num_decoder since we use all intermediate outputs of decoder
         outputs_class = self.cls_det(h)
