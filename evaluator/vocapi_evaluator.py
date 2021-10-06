@@ -4,6 +4,9 @@
     Licensed under The MIT License [see LICENSE for details]
 """
 
+import torch
+import torch.nn as nn
+import torch.backends.cudnn as cudnn
 from torch.autograd import Variable
 from data import VOCDetection
 import sys
@@ -37,9 +40,9 @@ class VOCAPIEvaluator():
         self.output_dir = self.get_output_dir('voc_eval/', self.set_type)
 
         # dataset
-        self.dataset = VOCDetection(root=data_root,
+        self.dataset = VOCDetection(root=data_root, 
                                     image_sets=[('2007', set_type)],
-                                    transform=transform
+                                    transform=None
                                     )
 
     def evaluate(self, net):
@@ -55,15 +58,23 @@ class VOCAPIEvaluator():
         det_file = os.path.join(self.output_dir, 'detections.pkl')
 
         for i in range(num_images):
-            im, gt, h, w = self.dataset.pull_item(i)
+            im, _ = self.dataset.pull_image(i)
+            h, w, _ = im.shape
+            size = np.array([[w, h, w, h]])
 
-            x = Variable(im.unsqueeze(0)).to(self.device)
+            # preprocess
+            img, _, _, scale, offset = self.transform(im)
+            x = torch.from_numpy(img[:, :, (2, 1, 0)]).permute(2, 0, 1).float()
+            x = x.unsqueeze(0).to(self.device)
+
             t0 = time.time()
             # forward
             bboxes, scores, cls_inds = net(x)
             detect_time = time.time() - t0
-            scale = np.array([[w, h, w, h]])
-            bboxes *= scale
+            # map the boxes to original image
+            bboxes -= offset
+            bboxes /= scale
+            bboxes *= size
 
             for j in range(len(self.labelmap)):
                 inds = np.where(cls_inds == j)[0]

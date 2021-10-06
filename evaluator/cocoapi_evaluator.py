@@ -1,9 +1,10 @@
 import json
 import tempfile
 
-from pycocotools.cocoeval import COCOeval
-
 from data.coco2017 import *
+from data import *
+
+from pycocotools.cocoeval import COCOeval
 
 
 class COCOAPIEvaluator():
@@ -32,19 +33,16 @@ class COCOAPIEvaluator():
             json_file='instances_val2017.json'
             name='val2017'
 
-        self.dataset = COCODataset(
-                                   data_dir=data_dir,
+        self.dataset = COCODataset(data_dir=data_dir,
                                    img_size=img_size,
                                    json_file=json_file,
                                    transform=None,
                                    name=name)
-
         self.img_size = img_size
         self.transform = transform
         self.device = device
-        self.ap50_95 = -1.
-        self.ap50 = -1.
-
+        self.ap50_95 = 0.
+        self.ap50 = 0.
 
     def evaluate(self, model):
         """
@@ -67,19 +65,27 @@ class COCOAPIEvaluator():
             if index % 500 == 0:
                 print('[Eval: %d / %d]'%(index, num_images))
 
-            img, id_ = self.dataset.pull_image(index)  # load a batch
-            if self.transform is not None:
-                x = torch.from_numpy(self.transform(img)[0][:, :, (2, 1, 0)]).permute(2, 0, 1)
-                x = x.unsqueeze(0).to(self.device)
-            scale = np.array([[img.shape[1], img.shape[0],
-                            img.shape[1], img.shape[0]]])
+            # load an image
+            img, id_ = self.dataset.pull_image(index)
+            h, w, _ = img.shape
+            size = np.array([[w, h, w, h]])
+
+            # preprocess
+            img, _, _, scale, offset = self.transform(img)
+            x = torch.from_numpy(img[:, :, (2, 1, 0)]).permute(2, 0, 1).float()
+            x = x.unsqueeze(0).to(self.device)
             
             id_ = int(id_)
             ids.append(id_)
+            # inference
             with torch.no_grad():
                 outputs = model(x)
                 bboxes, scores, cls_inds = outputs
-                bboxes *= scale
+                # map the boxes to original image
+                bboxes -= offset
+                bboxes /= scale
+                bboxes *= size
+
             for i, box in enumerate(bboxes):
                 x1 = float(box[0])
                 y1 = float(box[1])
@@ -101,8 +107,8 @@ class COCOAPIEvaluator():
             cocoGt = self.dataset.coco
             # workaround: temporarily write data to json file because pycocotools can't process dict in py36.
             if self.testset:
-                json.dump(data_dict, open('coco_2017.json', 'w'))
-                cocoDt = cocoGt.loadRes('coco_2017.json')
+                json.dump(data_dict, open('det_coco_2017.json', 'w'))
+                cocoDt = cocoGt.loadRes('det_coco_2017.json')
             else:
                 _, tmp = tempfile.mkstemp()
                 json.dump(data_dict, open(tmp, 'w'))
@@ -119,6 +125,6 @@ class COCOAPIEvaluator():
             self.ap50_95 = ap50_95
             self.ap50 = ap50
 
-            return ap50, ap50_95
+            return ap50_95, ap50
         else:
             return -1, -1
