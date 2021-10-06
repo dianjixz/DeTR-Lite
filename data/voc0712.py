@@ -75,7 +75,7 @@ class VOCAnnotationTransform(object):
                 # scale height or width
                 cur_pt = cur_pt / width if i % 2 == 0 else cur_pt / height
                 bndbox.append(cur_pt)
-            label_idx = self.class_to_ind[name]
+            label_idx = self.class_to_ind[name] + 1
             bndbox.append(label_idx)
             res += [bndbox]  # [x1, y1, x2, y2, label_ind]
             # img_id = target.find('filename').text[:-4]
@@ -268,7 +268,7 @@ class VOCDetection(data.Dataset):
         boxes[:, :2] = (boxes_[:, 2:] + boxes_[:, :2]) / 2.0
         boxes[:, 2:] = boxes_[:, 2:] - boxes_[:, :2]
     
-        target_dict = {"labels": (labels + 1).astype(np.int), "boxes": boxes}
+        target_dict = {"labels": labels, "boxes": boxes}
         print(target_dict)
 
         return img, target_dict, height, width, scale, offset
