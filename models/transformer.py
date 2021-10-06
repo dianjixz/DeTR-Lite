@@ -77,9 +77,9 @@ class TransformerEncoderLayer(nn.Module):
 
     def forward(self, x, pos=None):
         # x -> [B, N, d_in]
+        print(x.shape)
         q = k = x if pos is None else x + pos
         v = x
-        print(q.shape, k.shape, v.shape)
         x = self.attn(q, k, v)
         x = self.ffn(x)
 
