@@ -1,4 +1,5 @@
 import torch
+from torch._C import device
 import torch.nn as nn
 from torch.nn.modules import dropout
 from .backbone import resnet18, resnet34, resnet50, resnet101
@@ -94,8 +95,8 @@ class DeTR(nn.Module):
             x_embed = x_embed / (x_embed[:, :, -1:] + eps) * scale
     
         # [H, W] -> [B, H, W]
-        y_embed = y_embed.repeat(B, 1, 1)
-        x_embed = x_embed.repeat(B, 1, 1)
+        y_embed = y_embed.repeat(B, 1, 1).to(self.device)
+        x_embed = x_embed.repeat(B, 1, 1).to(self.device)
 
 
         dim_t = torch.arange(num_pos_feats, dtype=torch.float32, device=self.device)

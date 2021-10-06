@@ -369,8 +369,7 @@ def train():
                     tblogger.add_scalar('loss_giou',  loss_dict_reduced_unscaled['loss_giou_unscaled'].item(),  ni)
                 
                 t1 = time.time()
-                print('[Epoch %d/%d][Iter %d/%d][lr %.6f] \
-                       [loss_ce: obj %.2f || loss_bbox %.2f || loss_giou %.2f][size %d][time: %.2f]'
+                print('[Epoch %d/%d][Iter %d/%d][lr %.6f][loss_ce: %.2f || loss_bbox %.2f || loss_giou %.2f][size %d][time: %.2f]'
                         % (epoch+1, 
                            args.max_epoch, 
                            iter_i, 
