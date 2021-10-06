@@ -30,8 +30,10 @@ class DeTR(nn.Module):
         self.trainable = trainable
         self.num_queries = num_queries
         self.hidden_dim = hidden_dim
+        self.dropout = dropout
         self.aux_loss = aux_loss
         self.criterion = criterion
+
 
         # position embedding
         self.pos_embed = self.position_embedding(batch_size, 
