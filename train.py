@@ -152,32 +152,32 @@ def train():
         data_dir = VOC_ROOT
         num_classes = 20
         dataset = VOCDetection(root=data_dir, 
-                               img_size=train_size,
-                               transform=BasicAugmentation(train_size),
-                               color_augment=ColorAugmentation(train_size),
+                               img_size=args.img_size,
+                               transform=BasicAugmentation(args.img_size),
+                               color_augment=ColorAugmentation(args.img_size),
                                mosaic=args.mosaic,
                                mixup=args.mixup)
 
         evaluator = VOCAPIEvaluator(data_root=data_dir,
-                                    img_size=val_size,
+                                    img_size=args.img_size,
                                     device=device,
-                                    transform=BaseTransform(val_size),
+                                    transform=BaseTransform(args.img_size),
                                     labelmap=VOC_CLASSES)
 
     elif args.dataset == 'coco':
         data_dir = coco_root
         num_classes = 80
         dataset = COCODataset(data_dir=data_dir,
-                              img_size=train_size,
-                              transform=BasicAugmentation(train_size),
-                              color_transformer=ColorAugmentation(train_size),
+                              img_size=args.img_size,
+                              transform=BasicAugmentation(args.img_size),
+                              color_transformer=ColorAugmentation(args.img_size),
                               mosaic=args.mosaic,
                               mixup=args.mixup)
 
         evaluator = COCOAPIEvaluator(data_dir=data_dir,
-                                     img_size=val_size,
+                                     img_size=args.img_size,
                                      device=device,
-                                     transform=BaseTransform(val_size))
+                                     transform=BaseTransform(args.img_size))
     
     else:
         print('unknow dataset !! Only support voc and coco !!')
