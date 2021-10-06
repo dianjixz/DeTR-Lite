@@ -1,8 +1,9 @@
 import torch
 import torch.nn as nn
 from torch.nn.modules import dropout
-from backbone import *
-from utils.modules import Transformer, MLP
+from .backbone import resnet18, resnet50, resnet101
+from .transformer import Transformer
+from utils.modules import MLP
 import math
 
 class DeTR(nn.Module):
