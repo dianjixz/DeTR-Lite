@@ -329,8 +329,6 @@ def train():
             targets = [{"labels": v["labels"].to(device), 
                         "boxes":  v["boxes"].to(device)} for v in targets]
 
-            print(targets)
-
             # forward
             outputs = model(images)
             loss_dict = criterion(outputs, targets)
@@ -361,6 +359,8 @@ def train():
             # ema update
             if args.ema:
                 ema.update(model)
+
+            print(loss_dict_reduced_unscaled)
 
             # display
             if iter_i % 10 == 0:
