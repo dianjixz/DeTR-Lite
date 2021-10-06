@@ -19,6 +19,7 @@ class DeTR(nn.Module):
                  hidden_dim=256,
                  mlp_dim=2048,
                  aux_loss=False,
+                 criterion=None,
                  backbone='r50'):
         super().__init__()
         self.device = device
@@ -28,6 +29,7 @@ class DeTR(nn.Module):
         self.num_queries = num_queries
         self.hidden_dim = hidden_dim
         self.aux_loss = aux_loss
+        self.criterion = criterion
 
         # position embedding
         self.pos_embed = self.position_embedding(batch_size, 
@@ -63,7 +65,8 @@ class DeTR(nn.Module):
                                        dim_head=hidden_dim // num_heads,
                                        mlp_dim=mlp_dim,
                                        dropout=dropout,
-                                       act='relu')
+                                       act='relu',
+                                       return_intermediate=True)
 
         # det
         self.cls_det = nn.Linear(hidden_dim, num_classes + 1)
@@ -108,6 +111,15 @@ class DeTR(nn.Module):
         return pos
 
 
+    @torch.jit.unused
+    def set_aux_loss(self, outputs_class, outputs_coord):
+        # this is a workaround to make torchscript happy, as torchscript
+        # doesn't support dictionary with non-homogeneous values, such
+        # as a dict having both a Tensor and a list.
+        return [{'pred_logits': a, 'pred_boxes': b}
+                for a, b in zip(outputs_class[:-1], outputs_coord[:-1])]
+
+
     def forward(self, x):
         # backbone
         x = self.backbone(x)
@@ -115,16 +127,25 @@ class DeTR(nn.Module):
 
         # transformer
         tgt = torch.zeros_like(self.query_embed)
-        h = self.transformer(x, tgt, self.pos_embed, self.query_embed)
+        h = self.transformer(x, tgt, self.pos_embed, self.query_embed)[0]
 
-        # det
-        cls_det = self.cls_det(h)
-        reg_det = self.reg_det(h).sigmoid()
+        # output: [M, B, N, C] where M = num_decoder since we use all intermediate outputs of decoder
+        outputs_class = self.cls_det(h)
+        outputs_coord = self.reg_det(h).sigmoid()
 
+        # we only compute the loss of last output from decoder
+        outputs = {'pred_logits': outputs_class[-1], 'pred_boxes': outputs_coord[-1]}
+        if self.aux_loss:
+            outputs['aux_outputs'] = self._set_aux_loss(outputs_class, outputs_coord)
+        
         if self.trainable:
-            # compute loss
-            pass
+            # The loss is computed in the external file
+            return outputs
 
         else:
-            # decode cls and reg prediction
-            pass
+            # post process
+            scores = None
+            cls_inds = None
+            bboxes = None
+
+            return scores, cls_inds, bboxes

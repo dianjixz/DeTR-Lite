@@ -39,6 +39,7 @@ class COCODataset(Dataset):
                  data_dir='COCO', 
                  img_size=640,
                  transform=None, 
+                 color_transformer=None,
                  json_file='instances_train2017.json',
                  name='train2017', 
                  debug=False,
@@ -66,8 +67,17 @@ class COCODataset(Dataset):
         self.name = name
         # augmentation
         self.transform = transform
+        self.color_transformer = color_transformer
         self.mosaic = mosaic
         self.mixup = mixup
+
+        # mosaic augmentation
+        if self.mosaic:
+            print('use Mosaic Augmentation ...')
+
+        # mixup augmentation
+        if self.mixup:
+            print('use Mixup Augmentation ...')
 
 
     def __len__(self):
@@ -260,7 +270,10 @@ class COCODataset(Dataset):
                 target = np.array(target)
 
         # augment
-        img, boxes, labels, scale, offset = self.transform(img, target[:, :4], target[:, 4])
+        if self.mosaic:
+            img, boxes, labels, scale, offset = self.color_transform(img, target[:, :4], target[:, 4])
+        else:
+            img, boxes, labels, scale, offset = self.transform(img, target[:, :4], target[:, 4])
         # to rgb
         img = img[:, :, (2, 1, 0)]
         # to tensor

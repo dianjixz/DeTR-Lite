@@ -105,6 +105,7 @@ class VOCDetection(data.Dataset):
                  img_size=640,
                  image_sets=[('2007', 'trainval'), ('2012', 'trainval')],
                  transform=None, 
+                 color_transform=None,
                  target_transform=VOCAnnotationTransform(),
                  mosaic=False,
                  mixup=False,
@@ -124,8 +125,17 @@ class VOCDetection(data.Dataset):
                 self.ids.append((rootpath, line.strip()))
         # augmentation
         self.transform = transform
+        self.color_transform = color_transform
         self.mosaic = mosaic
         self.mixup = mixup
+
+        # mosaic augmentation
+        if self.mosaic:
+            print('use Mosaic Augmentation ...')
+
+        # mixup augmentation
+        if self.mixup:
+            print('use Mixup Augmentation ...')
 
 
     def __getitem__(self, index):
@@ -245,7 +255,10 @@ class VOCDetection(data.Dataset):
                 target = np.array(target)
 
         # augment
-        img, boxes, labels, scale, offset = self.transform(img, target[:, :4], target[:, 4])
+        if self.mosaic:
+            img, boxes, labels, scale, offset = self.color_transform(img, target[:, :4], target[:, 4])
+        else:
+            img, boxes, labels, scale, offset = self.transform(img, target[:, :4], target[:, 4])
         # to rgb
         img = img[:, :, (2, 1, 0)]
         # to tensor

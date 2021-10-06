@@ -38,11 +38,11 @@ class FeedForward(nn.Module):
         )
         self.norm = nn.LayerNorm(dim)
     def forward(self, x):
-        return self.norm(self.net(x) + x)
+        return self.norm(self.net(x)) + x
 
 
-# Attention
-class Attention(nn.Module):
+# MultiHeadAttention
+class MultiHeadAttention(nn.Module):
     def __init__(self, 
                  dim,
                  heads=8, 
@@ -82,7 +82,7 @@ class Attention(nn.Module):
         # [B, h, N, d] -> [B, N, h*d]=[B, N, C_out], C_out = h*d
         out = out.permute(0, 2, 1, 3).contiguous().view(B, N, -1)
         
-        return self.norm(self.to_out(out) + query)
+        return self.norm(self.to_out(out)) + query
 
 
 # Transformer Encoder Layer
@@ -95,7 +95,7 @@ class TransformerEncoderLayer(nn.Module):
                  dropout = 0.,
                  act='relu'):
         super().__init__()
-        self.attn = Attention(dim, heads, dim_head, dropout)
+        self.attn = MultiHeadAttention(dim, heads, dim_head, dropout)
         self.ffn = FeedForward(dim, mlp_dim, dropout, act)
 
     def forward(self, x, pos=None):
@@ -146,9 +146,9 @@ class TransformerDecoderLayer(nn.Module):
                  dropout = 0.,
                  act='relu'):
         super().__init__()
-        self.attn_0 = Attention(dim, heads, dim_head, dropout)
+        self.attn_0 = MultiHeadAttention(dim, heads, dim_head, dropout)
         self.ffn_0 = FeedForward(dim, mlp_dim, dropout, act)
-        self.attn_1 = Attention(dim, heads, dim_head, dropout)
+        self.attn_1 = MultiHeadAttention(dim, heads, dim_head, dropout)
         self.ffn_1 = FeedForward(dim, mlp_dim, dropout, act)
 
     def forward(self, tgt, memory, pos=None, query_pos=None):
@@ -215,7 +215,8 @@ class Transformer(nn.Module):
                  dim_head,       # 每个head的dim
                  mlp_dim = 2048,   # FFN中的dim
                  dropout = 0.,
-                 act = 'relu'):
+                 act = 'relu',
+                 return_intermediate = False):
         super().__init__()
         self.encoder = TransformerEncoder(
             dim = dim,
@@ -233,7 +234,8 @@ class Transformer(nn.Module):
             dim_head = dim_head,
             mlp_dim = mlp_dim,
             dropout = dropout,
-            act = act
+            act = act,
+            return_intermediate = return_intermediate
         )
 
     def forward(self, x, tgt, pos=None, query_pos=None):
