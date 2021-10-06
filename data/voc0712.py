@@ -268,7 +268,8 @@ class VOCDetection(data.Dataset):
         boxes[:, :2] = (boxes_[:, 2:] + boxes_[:, :2]) / 2.0
         boxes[:, 2:] = boxes_[:, 2:] - boxes_[:, :2]
     
-        target_dict = {"labels": labels + 1, "boxes": boxes}
+        target_dict = {"labels": (labels + 1).astype(np.int), "boxes": boxes}
+        print(target_dict)
 
         return img, target_dict, height, width, scale, offset
 
