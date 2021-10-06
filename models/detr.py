@@ -128,6 +128,7 @@ class DeTR(nn.Module):
         # backbone
         x = self.backbone(x)
         x = self.input_proj(x)
+        print('backbone, ', x.shape)
 
         # transformer
         tgt = torch.zeros_like(self.query_embed.weight)
