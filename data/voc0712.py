@@ -268,7 +268,8 @@ class VOCDetection(data.Dataset):
         boxes[:, :2] = (boxes_[:, 2:] + boxes_[:, :2]) / 2.0
         boxes[:, 2:] = boxes_[:, 2:] - boxes_[:, :2]
     
-        target_dict = {"labels": labels, "bboxes": boxes}
+        target_dict = {"labels": torch.from_numpy(labels).long(),
+                       "bboxes": torch.from_numpy(boxes).float()}
 
         return img, target_dict, height, width, scale, offset
 

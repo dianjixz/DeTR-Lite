@@ -326,11 +326,11 @@ def train():
                                         
             # to device
             images = images.to(device)
-            targets = [{"labels": torch.from_numpy(v["labels"]).long().to(device), 
-                        "bboxes": torch.from_numpy(v["bboxes"]).long().to(device)} for v in targets]
+            targets = [{"labels": v["labels"].to(device), 
+                        "bboxes": v["bboxes"].to(device)} for v in targets]
 
             print(targets)
-            
+
             # forward
             outputs = model(images)
             loss_dict = criterion(outputs, targets)
