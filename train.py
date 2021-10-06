@@ -156,7 +156,7 @@ def train():
         dataset = VOCDetection(root=data_dir, 
                                img_size=args.img_size,
                                transform=BasicAugmentation(args.img_size),
-                               color_augment=ColorAugmentation(args.img_size),
+                               color_transform=ColorAugmentation(args.img_size),
                                mosaic=args.mosaic,
                                mixup=args.mixup)
 
