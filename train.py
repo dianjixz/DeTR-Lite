@@ -114,6 +114,8 @@ def parse_args():
                         help='use mixup augmentation')
     parser.add_argument('--ema', action='store_true', default=False,
                         help='use ema training trick')
+    parser.add_argument('--no_warmup', action='store_true', default=False,
+                        help='do not use warmup')
 
     # train DDP
     parser.add_argument('-dist', '--distributed', action='store_true', default=False,
@@ -287,7 +289,7 @@ def train():
     epoch_size = len(dataset) // (args.batch_size * world_size)
     base_lr = args.lr
     tmp_lr = base_lr
-    warmup = True
+    warmup = not args.no_warmup
     
     best_map = 0.
     t0 = time.time()
