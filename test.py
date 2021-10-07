@@ -158,9 +158,6 @@ if __name__ == '__main__':
     model_name = args.version
     print('Model: ', model_name)
 
-    # config file
-    cfg = config.detr
-
     # build model
     model = DeTR(device=device,
                  batch_size=1,
