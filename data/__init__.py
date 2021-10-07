@@ -31,7 +31,7 @@ def base_transform(img, size, mean, std, boxes=None):
     if h0 > w0:
         # resize
         r = w0 / h0
-        img = cv2.resize(img, (int(r * size), size)).astype(np.float32)
+        img = cv2.resize(img, (int(r * size[1]), size[0])).astype(np.float32)
         # normalize
         img /= 255.
         img -= mean
@@ -48,7 +48,7 @@ def base_transform(img, size, mean, std, boxes=None):
     elif h0 < w0:
         # resize
         r = h0 / w0
-        img = cv2.resize(img, (size, int(r * size))).astype(np.float32)
+        img = cv2.resize(img, (size[1], int(r * size[0]))).astype(np.float32)
         # normalize
         img /= 255.
         img -= mean
@@ -64,7 +64,7 @@ def base_transform(img, size, mean, std, boxes=None):
 
     else:
         # resize
-        img = cv2.resize(img, (size, size)).astype(np.float32)
+        img = cv2.resize(img, (size[1], size[0])).astype(np.float32)
         # normalize
         img /= 255.
         img -= mean
@@ -80,7 +80,7 @@ def base_transform(img, size, mean, std, boxes=None):
 
 
 class BaseTransform:
-    def __init__(self, size, mean=(0.406, 0.456, 0.485), std=(0.225, 0.224, 0.229)):
+    def __init__(self, size=[640, 640], mean=(0.406, 0.456, 0.485), std=(0.225, 0.224, 0.229)):
         self.size = size
         self.mean = np.array(mean, dtype=np.float32)
         self.std = np.array(std, dtype=np.float32)

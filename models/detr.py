@@ -1,10 +1,10 @@
 import torch
-from torch._C import device
+import numpy as np
 import torch.nn as nn
-from torch.nn.modules import dropout
 from .backbone import resnet18, resnet34, resnet50, resnet101
 from .transformer import Transformer
 from utils.modules import MLP
+import utils.box_ops as box_ops
 import math
 
 class DeTR(nn.Module):
@@ -14,6 +14,8 @@ class DeTR(nn.Module):
                  img_size=640,
                  num_classes=80,
                  trainable=False,
+                 conf_thresh=0.01,
+                 nms_thresh=0.6,
                  num_heads=8,
                  num_encoders=6,
                  num_decoders=6,
@@ -23,17 +25,21 @@ class DeTR(nn.Module):
                  dropout=0.1,
                  aux_loss=False,
                  criterion=None,
-                 backbone='r50'):
+                 backbone='r50',
+                 use_nms=False):
         super().__init__()
         self.device = device
         self.img_size = img_size
         self.num_classes = num_classes
         self.trainable = trainable
+        self.conf_thresh = conf_thresh
+        self.nms_thresh = nms_thresh
         self.num_queries = num_queries
         self.hidden_dim = hidden_dim
         self.dropout = dropout
         self.aux_loss = aux_loss
         self.criterion = criterion
+        self.use_nms = use_nms
 
 
         # position embedding
@@ -78,7 +84,7 @@ class DeTR(nn.Module):
         
     # Position Embedding
     def position_embedding(self, B, num_pos_feats=128, temperature=10000, normalize=False, scale=None):
-        h, w = self.img_size // 32, self.img_size // 32
+        h, w = self.img_size[0] // 32, self.img_size[1] // 32
         
         if scale is not None and normalize is False:
             raise ValueError("normalize should be True if scale is passed")
@@ -123,6 +129,38 @@ class DeTR(nn.Module):
                 for a, b in zip(outputs_class[:-1], outputs_coord[:-1])]
 
 
+    def nms(self, dets, scores):
+        """"Pure Python NMS baseline."""
+        x1 = dets[:, 0]  #xmin
+        y1 = dets[:, 1]  #ymin
+        x2 = dets[:, 2]  #xmax
+        y2 = dets[:, 3]  #ymax
+
+        areas = (x2 - x1) * (y2 - y1)                 # the size of bbox
+        order = scores.argsort()[::-1]                        # sort bounding boxes by decreasing order
+
+        keep = []                                             # store the final bounding boxes
+        while order.size > 0:
+            i = order[0]                                      #the index of the bbox with highest confidence
+            keep.append(i)                                    #save it to keep
+            xx1 = np.maximum(x1[i], x1[order[1:]])
+            yy1 = np.maximum(y1[i], y1[order[1:]])
+            xx2 = np.minimum(x2[i], x2[order[1:]])
+            yy2 = np.minimum(y2[i], y2[order[1:]])
+
+            w = np.maximum(1e-28, xx2 - xx1)
+            h = np.maximum(1e-28, yy2 - yy1)
+            inter = w * h
+
+            # Cross Area / (bbox + particular area - Cross Area)
+            ovr = inter / (areas[i] + areas[order[1:]] - inter)
+            #reserve all the boundingbox whose ovr less than thresh
+            inds = np.where(ovr <= self.nms_thresh)[0]
+            order = order[inds + 1]
+
+        return keep
+
+
     def forward(self, x):
         # backbone
         x = self.backbone(x)
@@ -140,14 +178,67 @@ class DeTR(nn.Module):
         if self.aux_loss:
             outputs['aux_outputs'] = self.set_aux_loss(outputs_class, outputs_coord)
         
+        # train
         if self.trainable:
             # The loss is computed in the external file
             return outputs
 
+        # test
         else:
-            # post process
-            scores = None
-            cls_inds = None
-            bboxes = None
+            # batch_size = 1
+            out_logits, out_bbox = outputs['pred_logits'], outputs['pred_boxes']
+            # [B, N, C] -> [N, C]
+            prob = out_logits[0].softmax(-1)
+            scores, labels = prob[..., 1:].max(-1)
 
-            return scores, cls_inds, bboxes
+            # convert to [x0, y0, x1, y1] format
+            bboxes = box_ops.box_cxcywh_to_xyxy(out_bbox)[0]
+            img_h, img_w = self.img_size
+            scale_fct = torch.stack([img_w, img_h, img_w, img_h], dim=1)
+            bboxes = bboxes * scale_fct[None, :]
+
+            # intermediate outputs
+            if 'aux_outputs' in outputs:
+                for i, aux_outputs in enumerate(outputs['aux_outputs']):
+                    # batch_size = 1
+                    out_logits_i, out_bbox_i = aux_outputs['pred_logits'], aux_outputs['pred_boxes']
+                    # [B, N, C] -> [N, C]
+                    prob_i = out_logits_i[0].softmax(-1)
+                    scores_i, labels_i = prob_i[..., 1:].max(-1)
+
+                    # convert to [x0, y0, x1, y1] format
+                    bboxes_i = box_ops.box_cxcywh_to_xyxy(out_bbox_i)[0]
+                    bboxes_i = bboxes_i * scale_fct[None, :]
+
+                    scores = torch.cat([scores, scores_i], dim=0)
+                    labels = torch.cat([labels, labels_i], dim=0)
+                    bboxes = torch.cat([bboxes, bboxes_i], dim=0)
+            
+            # to cpu
+            scores = scores.cpu().numpy().tolist()
+            labels = labels.cpu().numpy().tolist()
+            bboxes = bboxes.cpu().numpy().tolist()
+
+            # threshold
+            keep = np.where(scores >= self.conf_thresh)
+
+            # nms
+            if self.use_nms:
+                # nms
+                keep = np.zeros(len(bboxes), dtype=np.int)
+                for i in range(self.num_classes):
+                    inds = np.where(labels == i)[0]
+                    if len(inds) == 0:
+                        continue
+                    c_bboxes = bboxes[inds]
+                    c_scores = scores[inds]
+                    c_keep = self.nms(c_bboxes, c_scores)
+                    keep[inds[c_keep]] = 1
+
+                keep = np.where(keep > 0)
+                scores = scores[keep]
+                labels = labels[keep]
+                bboxes = bboxes[keep]
+
+            
+            return scores, labels, bboxes

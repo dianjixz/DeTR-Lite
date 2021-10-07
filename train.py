@@ -40,8 +40,8 @@ def parse_args():
                         help='initial learning rate')
     parser.add_argument('--lr_backbone', default=1e-5, type=float,
                         help='lr for backbone')
-    parser.add_argument('-size', '--img_size', default=640, type=int, 
-                        help='image size.')
+    parser.add_argument('-size', '--img_size', default=[640, 640], 
+                        help='input size: [H, W].')
     parser.add_argument('--clip_max_norm', default=0.1, type=float,
                         help='gradient clipping max norm')
     parser.add_argument('--max_epoch', type=int, default=150, 
