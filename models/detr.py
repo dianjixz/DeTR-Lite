@@ -165,6 +165,7 @@ class DeTR(nn.Module):
         # backbone
         x = self.backbone(x)
         x = self.input_proj(x)
+        print(x.size())
 
         # transformer
         h = self.transformer(x, self.pos_embed, self.query_embed.weight)[0]
