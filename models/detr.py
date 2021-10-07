@@ -138,7 +138,7 @@ class DeTR(nn.Module):
         # we only compute the loss of last output from decoder
         outputs = {'pred_logits': outputs_class[-1], 'pred_boxes': outputs_coord[-1]}
         if self.aux_loss:
-            outputs['aux_outputs'] = self._set_aux_loss(outputs_class, outputs_coord)
+            outputs['aux_outputs'] = self.set_aux_loss(outputs_class, outputs_coord)
         
         if self.trainable:
             # The loss is computed in the external file
