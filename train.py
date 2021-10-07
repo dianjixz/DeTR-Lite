@@ -191,7 +191,6 @@ def train():
 
     # build model
     model = DeTR(device=device,
-                 batch_size=args.batch_size,
                  img_size=args.img_size,
                  num_classes=num_classes,
                  trainable=True,

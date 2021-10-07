@@ -160,7 +160,6 @@ if __name__ == '__main__':
 
     # build model
     model = DeTR(device=device,
-                 batch_size=1,
                  img_size=args.img_size,
                  num_classes=num_classes,
                  trainable=False,
