@@ -366,23 +366,20 @@ def train():
             if iter_i % 10 == 0:
                 if args.tfboard:
                     # viz loss
-                    tblogger.add_scalar('loss_ce',    loss_dict_reduced_unscaled['loss_ce_unscaled'].item(),    ni)
-                    tblogger.add_scalar('loss_bbox',  loss_dict_reduced_unscaled['loss_bbox_unscaled'].item(),  ni)
-                    tblogger.add_scalar('loss_giou',  loss_dict_reduced_unscaled['loss_giou_unscaled'].item(),  ni)
+                    for k, v in loss_dict_reduced_unscaled:
+                        tblogger.add_scalar(k, v.item(), ni)
                 
                 t1 = time.time()
-                print('[Epoch %d/%d][Iter %d/%d][lr %.6f][loss_ce: %.2f || loss_bbox %.2f || loss_giou %.2f][size (%d, %d)][time: %.2f]'
-                        % (epoch+1, 
-                           args.max_epoch, 
-                           iter_i, 
-                           epoch_size, 
-                           tmp_lr,
-                           loss_dict_reduced_unscaled['loss_ce_unscaled'].item(), 
-                           loss_dict_reduced_unscaled['loss_bbox_unscaled'].item(), 
-                           loss_dict_reduced_unscaled['loss_giou_unscaled'].item(), 
-                           args.img_size[0], args.img_size[1], 
-                           t1-t0),
-                        flush=True)
+                out_stream = '[Epoch %d/%d][Iter %d/%d][lr %.6f]' % (
+                                    epoch+1, 
+                                    args.max_epoch, 
+                                    iter_i, 
+                                    epoch_size, 
+                                    tmp_lr)
+                for k, v in loss_dict_reduced_unscaled:
+                    out_stream += '[' + str(k) + ': ' + str(round(v, 3)) + ']'
+                out_stream += '[time: ' + str(round(t1-t0, 3)) + ']'
+                print(out_stream, flush=True)
 
                 t0 = time.time()
 
