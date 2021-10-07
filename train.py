@@ -23,7 +23,7 @@ from evaluator.vocapi_evaluator import VOCAPIEvaluator
 from utils import distributed_utils
 from utils.augmentations import BasicAugmentation, ColorAugmentation
 from utils.modules import ModelEMA
-from utils.match import build_matcher
+from utils.matcher import build_matcher
 from utils.loss import build_criterion
 
 from models.detr import DeTR
@@ -361,6 +361,7 @@ def train():
             if args.ema:
                 ema.update(model)
 
+            print(loss_dict_reduced_unscaled)
             # display
             if iter_i % 10 == 0:
                 if args.tfboard:
