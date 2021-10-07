@@ -72,7 +72,7 @@ def parse_args():
                         help="giou box coefficient in the matching cost")
 
     # Loss
-    parser.add_argument('--no_aux_loss', action='store_false',
+    parser.add_argument('--no_aux_loss', action='store_true',
                         help="Disables auxiliary decoding losses (loss at each layer)")
     parser.add_argument('--dice_loss_coef', default=1, type=float)
     parser.add_argument('--bbox_loss_coef', default=5, type=float)
@@ -202,7 +202,7 @@ def train():
                  hidden_dim=args.hidden_dim,
                  mlp_dim=args.mlp_dim,
                  dropout=args.dropout,
-                 aux_loss=args.no_aux_loss,
+                 aux_loss=not args.no_aux_loss,
                  backbone=args.backbone).to(device).train()
     # build matcher
     matcher = build_matcher(args)
