@@ -368,7 +368,8 @@ def train():
                         tblogger.add_scalar(k, loss_dict_reduced_unscaled[k].item(), ni)
                 
                 t1 = time.time()
-                out_stream = '[Epoch %d/%d][Iter %d/%d][lr %.6f][size: %d] \n' % (
+                out_stream = '>>>>>>>>>>>>> Training Stage <<<<<<<<<<<<< \n'
+                out_stream += '[Epoch %d/%d][Iter %d/%d][lr %.6f][size: %d] \n' % (
                                     epoch+1, 
                                     args.max_epoch, 
                                     iter_i, 
