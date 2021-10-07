@@ -239,4 +239,4 @@ class DeTR(nn.Module):
                     bboxes = bboxes[keep]
 
                 
-                return scores, labels, bboxes
+                return bboxes, scores, labels
