@@ -93,6 +93,7 @@ class HungarianMatcher(nn.Module):
         # j contains col indexes of cost matrix: array([col_1, col_2, col_3])
         # len(i) == len(j)
         # len(indices) = batch_size
+        print(indices)
         return [(torch.as_tensor(i, dtype=torch.int64), torch.as_tensor(j, dtype=torch.int64)) for i, j in indices]
 
 
