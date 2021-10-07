@@ -184,58 +184,59 @@ class DeTR(nn.Module):
 
         # test
         else:
-            # batch_size = 1
-            out_logits, out_bbox = outputs['pred_logits'], outputs['pred_boxes']
-            # [B, N, C] -> [N, C]
-            prob = out_logits[0].softmax(-1)
-            scores, labels = prob[..., 1:].max(-1)
+            with torch.no_grad():
+                # batch_size = 1
+                out_logits, out_bbox = outputs['pred_logits'], outputs['pred_boxes']
+                # [B, N, C] -> [N, C]
+                prob = out_logits[0].softmax(-1)
+                scores, labels = prob[..., 1:].max(-1)
 
-            # convert to [x0, y0, x1, y1] format
-            bboxes = box_ops.box_cxcywh_to_xyxy(out_bbox)[0]
-            bboxes = bboxes * self.img_size
+                # convert to [x0, y0, x1, y1] format
+                bboxes = box_ops.box_cxcywh_to_xyxy(out_bbox)[0]
+                bboxes = bboxes * self.img_size
 
-            # intermediate outputs
-            if 'aux_outputs' in outputs:
-                for i, aux_outputs in enumerate(outputs['aux_outputs']):
-                    # batch_size = 1
-                    out_logits_i, out_bbox_i = aux_outputs['pred_logits'], aux_outputs['pred_boxes']
-                    # [B, N, C] -> [N, C]
-                    prob_i = out_logits_i[0].softmax(-1)
-                    scores_i, labels_i = prob_i[..., 1:].max(-1)
+                # intermediate outputs
+                if 'aux_outputs' in outputs:
+                    for i, aux_outputs in enumerate(outputs['aux_outputs']):
+                        # batch_size = 1
+                        out_logits_i, out_bbox_i = aux_outputs['pred_logits'], aux_outputs['pred_boxes']
+                        # [B, N, C] -> [N, C]
+                        prob_i = out_logits_i[0].softmax(-1)
+                        scores_i, labels_i = prob_i[..., 1:].max(-1)
 
-                    # convert to [x0, y0, x1, y1] format
-                    bboxes_i = box_ops.box_cxcywh_to_xyxy(out_bbox_i)[0]
-                    bboxes_i = bboxes_i * self.img_size
+                        # convert to [x0, y0, x1, y1] format
+                        bboxes_i = box_ops.box_cxcywh_to_xyxy(out_bbox_i)[0]
+                        bboxes_i = bboxes_i * self.img_size
 
-                    scores = torch.cat([scores, scores_i], dim=0)
-                    labels = torch.cat([labels, labels_i], dim=0)
-                    bboxes = torch.cat([bboxes, bboxes_i], dim=0)
-            
-            # to cpu
-            scores = scores.cpu().numpy().tolist()
-            labels = labels.cpu().numpy().tolist()
-            bboxes = bboxes.cpu().numpy().tolist()
+                        scores = torch.cat([scores, scores_i], dim=0)
+                        labels = torch.cat([labels, labels_i], dim=0)
+                        bboxes = torch.cat([bboxes, bboxes_i], dim=0)
+                
+                # to cpu
+                scores = scores.cpu().numpy().tolist()
+                labels = labels.cpu().numpy().tolist()
+                bboxes = bboxes.cpu().numpy().tolist()
 
-            # threshold
-            keep = np.where(scores >= self.conf_thresh)
+                # threshold
+                keep = np.where(scores >= self.conf_thresh)
 
-            # nms
-            if self.use_nms:
                 # nms
-                keep = np.zeros(len(bboxes), dtype=np.int)
-                for i in range(self.num_classes):
-                    inds = np.where(labels == i)[0]
-                    if len(inds) == 0:
-                        continue
-                    c_bboxes = bboxes[inds]
-                    c_scores = scores[inds]
-                    c_keep = self.nms(c_bboxes, c_scores)
-                    keep[inds[c_keep]] = 1
+                if self.use_nms:
+                    # nms
+                    keep = np.zeros(len(bboxes), dtype=np.int)
+                    for i in range(self.num_classes):
+                        inds = np.where(labels == i)[0]
+                        if len(inds) == 0:
+                            continue
+                        c_bboxes = bboxes[inds]
+                        c_scores = scores[inds]
+                        c_keep = self.nms(c_bboxes, c_scores)
+                        keep[inds[c_keep]] = 1
 
-                keep = np.where(keep > 0)
-                scores = scores[keep]
-                labels = labels[keep]
-                bboxes = bboxes[keep]
+                    keep = np.where(keep > 0)
+                    scores = scores[keep]
+                    labels = labels[keep]
+                    bboxes = bboxes[keep]
 
-            
-            return scores, labels, bboxes
+                
+                return scores, labels, bboxes
