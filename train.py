@@ -369,7 +369,7 @@ def train():
                         tblogger.add_scalar(k, loss_dict_reduced_unscaled[k].item(), ni)
                 
                 t1 = time.time()
-                out_stream = '[Epoch %d/%d][Iter %d/%d][lr %.6f][size: %d]' % (
+                out_stream = '[Epoch %d/%d][Iter %d/%d][lr %.6f][size: %d] \n' % (
                                     epoch+1, 
                                     args.max_epoch, 
                                     iter_i, 
@@ -378,7 +378,7 @@ def train():
                                     args.img_size)
                 for k in loss_dict_reduced_unscaled.keys():
                     v = loss_dict_reduced_unscaled[k].item()
-                    out_stream += '[' + str(k) + ': ' + str(round(v, 3)) + ']'
+                    out_stream += '[' + str(k) + ': ' + str(round(v, 3)) + '] \n'
                 out_stream += '[time: ' + str(round(t1-t0, 3)) + ']'
                 print(out_stream, flush=True)
 
