@@ -189,7 +189,6 @@ def train():
     print('The dataset size:', len(dataset))
     print("----------------------------------------------------------")
 
-    print(not args.no_aux_loss)
     # build model
     model = DeTR(device=device,
                  batch_size=args.batch_size,
@@ -203,7 +202,7 @@ def train():
                  hidden_dim=args.hidden_dim,
                  mlp_dim=args.mlp_dim,
                  dropout=args.dropout,
-                 aux_loss=not args.no_aux_loss,
+                 aux_loss=args.no_aux_loss,
                  backbone=args.backbone).to(device).train()
     # build matcher
     matcher = build_matcher(args)
