@@ -33,6 +33,7 @@ class DeTR(nn.Module):
         self.hidden_dim = hidden_dim
         self.dropout = dropout
         self.aux_loss = aux_loss
+        print(self.aux_loss)
         self.criterion = criterion
 
 
