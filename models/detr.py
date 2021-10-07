@@ -213,9 +213,9 @@ class DeTR(nn.Module):
                         bboxes = torch.cat([bboxes, bboxes_i], dim=0)
                 
                 # to cpu
-                scores = scores.cpu().numpy().tolist()
-                labels = labels.cpu().numpy().tolist()
-                bboxes = bboxes.cpu().numpy().tolist()
+                scores = scores.cpu().numpy()
+                labels = labels.cpu().numpy()
+                bboxes = bboxes.cpu().numpy()
 
                 # threshold
                 keep = np.where(scores >= self.conf_thresh)
