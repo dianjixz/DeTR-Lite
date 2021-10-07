@@ -25,6 +25,7 @@ from utils.augmentations import BasicAugmentation, ColorAugmentation
 from utils.modules import ModelEMA
 from utils.matcher import build_matcher
 from utils.loss import build_criterion
+from utils.com_flops_params import FLOPs_and_Params
 
 from models.detr import DeTR
 
@@ -208,6 +209,9 @@ def train():
     criterion = build_criterion(args, device, matcher, num_classes)
     criterion.train()
 
+    # compute FLOPs and Params
+    FLOPs_and_Params(model, args.img_size, device)
+    
     # DDP
     model_without_ddp = model
     if args.distributed:
