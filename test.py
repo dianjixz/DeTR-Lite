@@ -12,8 +12,6 @@ from data import config
 from models.detr import DeTR
 
 parser = argparse.ArgumentParser(description='DeTR Detection')
-parser.add_argument('-v', '--version', default='detr',
-                    help='detr')
 parser.add_argument('-d', '--dataset', default='voc',
                     help='voc, coco-val.')
 parser.add_argument('-size', '--img_size', default=640, type=int,
@@ -32,6 +30,24 @@ parser.add_argument('-vs', '--visual_threshold', default=0.3, type=float,
                     help='Final confidence threshold')
 parser.add_argument('--cuda', action='store_true', default=False, 
                     help='use cuda.')
+
+# model 
+parser.add_argument('-bk', '--backbone', default='r50', type=str, 
+                    help='backbone')
+parser.add_argument('--enc_layers', default=6, type=int,
+                    help="Number of encoding layers in the transformer")
+parser.add_argument('--dec_layers', default=6, type=int,
+                    help="Number of decoding layers in the transformer")
+parser.add_argument('--mlp_dim', default=2048, type=int,
+                    help="Intermediate size of the feedforward layers in the transformer blocks")
+parser.add_argument('--hidden_dim', default=256, type=int,
+                    help="Size of the embeddings (dimension of the transformer)")
+parser.add_argument('--dropout', default=0.1, type=float,
+                    help="Dropout applied in the transformer")
+parser.add_argument('--nheads', default=8, type=int,
+                    help="Number of attention heads inside the transformer's attentions")
+parser.add_argument('--num_queries', default=100, type=int,
+                    help="Number of query slots")
 
 args = parser.parse_args()
 
@@ -151,10 +167,19 @@ if __name__ == '__main__':
                  img_size=args.img_size,
                  num_classes=num_classes,
                  trainable=False,
-                 cfg=cfg,
+                 conf_thresh=args.conf_thresh,
+                 nms_thresh=args.nms_thresh,
+                 num_heads=args.nheads,
+                 num_encoders=args.enc_layers,
+                 num_decoders=args.dec_layers,
+                 num_queries=args.num_queries,
+                 hidden_dim=args.hidden_dim,
+                 mlp_dim=args.mlp_dim,
                  dropout=0.,
                  aux_loss=not args.no_aux_loss,
-                 backbone=args.backbone).to(device)
+                 backbone=args.backbone,
+                 use_nms=args.use_nms).to(device)
+
 
     # load weight
     model.load_state_dict(torch.load(args.trained_model, map_location=device), strict=False)
