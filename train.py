@@ -472,6 +472,7 @@ def vis_data(images, targets, input_size):
         img_ = cv2.imread('1.jpg')
         # bboox
         for label in targets[bi]:
+            print(label)
             cx, cy, bw, bh = label['boxes'][:-1]
             # print(x1, y1, x2, y2)
             x1 = int((cx - bw / 2) * img_w)
