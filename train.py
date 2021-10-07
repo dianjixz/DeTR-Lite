@@ -361,7 +361,6 @@ def train():
             if args.ema:
                 ema.update(model)
 
-            print(loss_dict_reduced_unscaled)
             # display
             if iter_i % 10 == 0:
                 if args.tfboard:
