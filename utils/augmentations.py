@@ -84,7 +84,7 @@ class Resize(object):
         if h0 > w0:
             # resize
             r = w0 / h0
-            image = cv2.resize(image, (int(r * size[1]), size[0])).astype(np.float32)
+            image = cv2.resize(image, (int(r * size), size)).astype(np.float32)
             # normalize
             image /= 255.
             image -= mean
@@ -101,7 +101,7 @@ class Resize(object):
         elif h0 < w0:
             # resize
             r = h0 / w0
-            image = cv2.resize(image, (size[1], int(r * size[0]))).astype(np.float32)
+            image = cv2.resize(image, (size, int(r * size))).astype(np.float32)
             # normalize
             image /= 255.
             image -= mean
@@ -117,7 +117,7 @@ class Resize(object):
 
         else:
             # resize
-            image = cv2.resize(image, (size[1], size[0])).astype(np.float32)
+            image = cv2.resize(image, (size, size)).astype(np.float32)
             # normalize
             image /= 255.
             image -= mean
@@ -411,7 +411,7 @@ class PhotometricDistort(object):
 
 # augmentation
 class BasicAugmentation(object):
-    def __init__(self, size=[640, 640], mean=(0.406, 0.456, 0.485), std=(0.225, 0.224, 0.229)):
+    def __init__(self, size=640, mean=(0.406, 0.456, 0.485), std=(0.225, 0.224, 0.229)):
         self.mean = mean
         self.mean_255 = (mean[0]*255, mean[1]*255, mean[2]*255)
         self.size = size
