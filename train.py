@@ -366,8 +366,8 @@ def train():
             if iter_i % 10 == 0:
                 if args.tfboard:
                     # viz loss
-                    for k, v in loss_dict_reduced_unscaled:
-                        tblogger.add_scalar(k, v.item(), ni)
+                    for k in loss_dict_reduced_unscaled.keys():
+                        tblogger.add_scalar(k, loss_dict_reduced_unscaled[k].item(), ni)
                 
                 t1 = time.time()
                 out_stream = '[Epoch %d/%d][Iter %d/%d][lr %.6f]' % (
@@ -376,7 +376,8 @@ def train():
                                     iter_i, 
                                     epoch_size, 
                                     tmp_lr)
-                for k, v in loss_dict_reduced_unscaled:
+                for k in loss_dict_reduced_unscaled.keys():
+                    v = loss_dict_reduced_unscaled[k].item()
                     out_stream += '[' + str(k) + ': ' + str(round(v, 3)) + ']'
                 out_stream += '[time: ' + str(round(t1-t0, 3)) + ']'
                 print(out_stream, flush=True)
