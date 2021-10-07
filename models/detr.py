@@ -16,12 +16,7 @@ class DeTR(nn.Module):
                  trainable=False,
                  conf_thresh=0.01,
                  nms_thresh=0.6,
-                 num_heads=8,
-                 num_encoders=6,
-                 num_decoders=6,
-                 num_queries=100,
-                 hidden_dim=256,
-                 mlp_dim=2048,
+                 cfg=None,
                  dropout=0.1,
                  aux_loss=False,
                  criterion=None,
@@ -34,8 +29,6 @@ class DeTR(nn.Module):
         self.trainable = trainable
         self.conf_thresh = conf_thresh
         self.nms_thresh = nms_thresh
-        self.num_queries = num_queries
-        self.hidden_dim = hidden_dim
         self.dropout = dropout
         self.aux_loss = aux_loss
         self.criterion = criterion
@@ -44,9 +37,9 @@ class DeTR(nn.Module):
 
         # position embedding
         self.pos_embed = self.position_embedding(batch_size, 
-                                                 num_pos_feats=hidden_dim//2)
+                                                 num_pos_feats=cfg['hidden_dim']//2)
         # object query
-        self.query_embed = nn.Embedding(num_queries, hidden_dim)
+        self.query_embed = nn.Embedding(cfg['num_queries'] , cfg['hidden_dim'])
 
         # backbone
         if backbone == 'r18':
@@ -63,23 +56,23 @@ class DeTR(nn.Module):
             c5 = 2048
         
         # to compress channel of C5
-        self.input_proj = nn.Conv2d(c5, hidden_dim, kernel_size=1)
+        self.input_proj = nn.Conv2d(c5, cfg['hidden_dim'], kernel_size=1)
 
         
         # transformer
-        self.transformer = Transformer(dim=hidden_dim,
-                                       num_encoders=num_encoders,
-                                       num_decoders=num_decoders,
-                                       num_heads=num_heads,
-                                       dim_head=hidden_dim // num_heads,
-                                       mlp_dim=mlp_dim,
+        self.transformer = Transformer(dim=cfg['hidden_dim'],
+                                       num_encoders=cfg['num_encoders'],
+                                       num_decoders=cfg['num_decoders'],
+                                       num_heads=cfg['num_heads'],
+                                       dim_head=cfg['hidden_dim'] // cfg['num_heads'],
+                                       mlp_dim=cfg['mlp_dim'],
                                        dropout=self.dropout,
                                        act='relu',
                                        return_intermediate=True)
 
         # det
-        self.cls_det = nn.Linear(hidden_dim, num_classes + 1)
-        self.reg_det = MLP(hidden_dim, hidden_dim, 4, 3)
+        self.cls_det = nn.Linear(cfg['hidden_dim'], num_classes + 1)
+        self.reg_det = MLP(cfg['hidden_dim'], cfg['hidden_dim'], 4, 3)
 
         
     # Position Embedding

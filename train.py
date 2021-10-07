@@ -13,7 +13,7 @@ import torch.backends.cudnn as cudnn
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 
-from data import VOC_CLASSES, VOC_ROOT, VOCDetection
+from data import VOC_CLASSES, VOC_ROOT, VOCDetection, config
 from data import coco_root, COCODataset
 from data import BaseTransform, detection_collate
 
@@ -83,20 +83,8 @@ def parse_args():
     # model 
     parser.add_argument('-bk', '--backbone', default='r50', type=str, 
                         help='backbone')
-    parser.add_argument('--enc_layers', default=6, type=int,
-                        help="Number of encoding layers in the transformer")
-    parser.add_argument('--dec_layers', default=6, type=int,
-                        help="Number of decoding layers in the transformer")
-    parser.add_argument('--mlp_dim', default=2048, type=int,
-                        help="Intermediate size of the feedforward layers in the transformer blocks")
-    parser.add_argument('--hidden_dim', default=256, type=int,
-                        help="Size of the embeddings (dimension of the transformer)")
     parser.add_argument('--dropout', default=0.1, type=float,
-                        help="Dropout applied in the transformer")
-    parser.add_argument('--nheads', default=8, type=int,
-                        help="Number of attention heads inside the transformer's attentions")
-    parser.add_argument('--num_queries', default=100, type=int,
-                        help="Number of query slots")
+                        help="dropout")
     
     # dataset
     parser.add_argument('-d', '--dataset', default='coco',
@@ -190,17 +178,13 @@ def train():
     print("----------------------------------------------------------")
 
     # build model
+    cfg = config.detr
     model = DeTR(device=device,
                  batch_size=args.batch_size,
                  img_size=args.img_size,
                  num_classes=num_classes,
                  trainable=True,
-                 num_heads=args.nheads,
-                 num_encoders=args.enc_layers,
-                 num_decoders=args.dec_layers,
-                 num_queries=args.num_queries,
-                 hidden_dim=args.hidden_dim,
-                 mlp_dim=args.mlp_dim,
+                 cfg=cfg,
                  dropout=args.dropout,
                  aux_loss=not args.no_aux_loss,
                  backbone=args.backbone).to(device).train()
