@@ -473,7 +473,7 @@ def vis_data(images, targets, input_size):
         # bboox
         bboxes = targets[bi]['boxes']
         for bbox in bboxes:
-            cx, cy, bw, bh = bbox[:-1]
+            cx, cy, bw, bh = bbox
             # print(x1, y1, x2, y2)
             x1 = int((cx - bw / 2) * img_w)
             y1 = int((cy - bh / 2) * img_h)
