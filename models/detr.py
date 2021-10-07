@@ -84,7 +84,7 @@ class DeTR(nn.Module):
         
     # Position Embedding
     def position_embedding(self, B, num_pos_feats=128, temperature=10000, normalize=False, scale=None):
-        h, w = self.img_size[0] // 32, self.img_size[1] // 32
+        h, w = self.img_size // 32, self.img_size // 32
         
         if scale is not None and normalize is False:
             raise ValueError("normalize should be True if scale is passed")
@@ -193,9 +193,7 @@ class DeTR(nn.Module):
 
             # convert to [x0, y0, x1, y1] format
             bboxes = box_ops.box_cxcywh_to_xyxy(out_bbox)[0]
-            img_h, img_w = self.img_size
-            scale_fct = torch.stack([img_w, img_h, img_w, img_h], dim=1)
-            bboxes = bboxes * scale_fct[None, :]
+            bboxes = bboxes * self.img_size
 
             # intermediate outputs
             if 'aux_outputs' in outputs:
@@ -208,7 +206,7 @@ class DeTR(nn.Module):
 
                     # convert to [x0, y0, x1, y1] format
                     bboxes_i = box_ops.box_cxcywh_to_xyxy(out_bbox_i)[0]
-                    bboxes_i = bboxes_i * scale_fct[None, :]
+                    bboxes_i = bboxes_i * self.img_size
 
                     scores = torch.cat([scores, scores_i], dim=0)
                     labels = torch.cat([labels, labels_i], dim=0)

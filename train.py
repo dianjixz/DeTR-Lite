@@ -40,7 +40,7 @@ def parse_args():
                         help='initial learning rate')
     parser.add_argument('--lr_backbone', default=1e-5, type=float,
                         help='lr for backbone')
-    parser.add_argument('-size', '--img_size', default=[640, 640], 
+    parser.add_argument('-size', '--img_size', default=640, type=int,
                         help='input size: [H, W].')
     parser.add_argument('--clip_max_norm', default=0.1, type=float,
                         help='gradient clipping max norm')
@@ -369,12 +369,13 @@ def train():
                         tblogger.add_scalar(k, loss_dict_reduced_unscaled[k].item(), ni)
                 
                 t1 = time.time()
-                out_stream = '[Epoch %d/%d][Iter %d/%d][lr %.6f]' % (
+                out_stream = '[Epoch %d/%d][Iter %d/%d][lr %.6f][size: %d]' % (
                                     epoch+1, 
                                     args.max_epoch, 
                                     iter_i, 
                                     epoch_size, 
-                                    tmp_lr)
+                                    tmp_lr,
+                                    args.img_size)
                 for k in loss_dict_reduced_unscaled.keys():
                     v = loss_dict_reduced_unscaled[k].item()
                     out_stream += '[' + str(k) + ': ' + str(round(v, 3)) + ']'
@@ -458,7 +459,7 @@ def set_lr(optimizer, lr):
 
 def vis_data(images, targets, input_size):
     # vis data
-    img_h, img_w = input_size
+    img_h = img_w = input_size
     mean=(0.406, 0.456, 0.485)
     std=(0.225, 0.224, 0.229)
     mean = np.array(mean, dtype=np.float32)
