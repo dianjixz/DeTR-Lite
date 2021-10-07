@@ -67,10 +67,10 @@ class MultiHeadAttention(nn.Module):
 # Transformer Encoder Layer
 class TransformerEncoderLayer(nn.Module):
     def __init__(self, 
-                 dim,            # 输入X的特征长度
-                 heads,          # multi-head的个数
-                 dim_head,       # 每个head的dim
-                 mlp_dim=2048,   # FFN中的dim
+                 dim,            # hidden_dim
+                 heads, 
+                 dim_head,
+                 mlp_dim=2048,
                  dropout = 0.,
                  act='relu'):
         super().__init__()
@@ -90,11 +90,11 @@ class TransformerEncoderLayer(nn.Module):
 # Transformer Encoder
 class TransformerEncoder(nn.Module):
     def __init__(self, 
-                 dim,            # 输入X的特征长度
-                 depth,          # Encoder的层数
-                 heads,          # multi-head的个数
-                 dim_head,       # 每个head的dim
-                 mlp_dim=2048,   # FFN中的dim
+                 dim,            # hidden_dim
+                 depth,          # num_encoder
+                 heads,
+                 dim_head,
+                 mlp_dim=2048,
                  dropout = 0.,
                  act='relu'):
         super().__init__()
@@ -118,10 +118,10 @@ class TransformerEncoder(nn.Module):
 # Transformer Decoder Layer
 class TransformerDecoderLayer(nn.Module):
     def __init__(self,
-                 dim,            # 输入X的特征长度
-                 heads,          # multi-head的个数
-                 dim_head,       # 每个head的dim
-                 mlp_dim=2048,   # FFN中的dim
+                 dim,            # hidden_dim
+                 heads,
+                 dim_head,
+                 mlp_dim=2048,
                  dropout = 0.,
                  act='relu'):
         super().__init__()
@@ -150,11 +150,11 @@ class TransformerDecoderLayer(nn.Module):
 # Transformer Decoder
 class TransformerDecoder(nn.Module):
     def __init__(self, 
-                 dim,            # 输入X的特征长度
-                 depth,          # Decoder
-                 heads,          # multi-head的个数
-                 dim_head,       # 每个head的dim
-                 mlp_dim=2048,   # FFN中的dim
+                 dim,            # hidden_dim
+                 depth,          # num_decoder
+                 heads,
+                 dim_head,
+                 mlp_dim=2048,
                  dropout = 0.,
                  act='relu',
                  return_intermediate=False):
@@ -187,12 +187,12 @@ class TransformerDecoder(nn.Module):
 # Transformer
 class Transformer(nn.Module):
     def __init__(self, 
-                 dim,            # 输入X的特征长度
-                 num_encoders,   # Encoder的层数
-                 num_decoders,   # Decoder的层数
-                 num_heads,          # multi-head的个数
-                 dim_head,       # 每个head的dim
-                 mlp_dim = 2048,   # FFN中的dim
+                 dim,            # hidden_dim
+                 num_encoders,
+                 num_decoders,
+                 num_heads,
+                 dim_head,
+                 mlp_dim = 2048,
                  dropout = 0.,
                  act = 'relu',
                  return_intermediate = False):

@@ -134,7 +134,6 @@ def parse_args():
 def train():
     args = parse_args()
     distributed_utils.init_distributed_mode(args)
-    print(distributed_utils.get_rank())
     print("Setting Arguments.. : ", args)
     print("----------------------------------------------------------")
         
