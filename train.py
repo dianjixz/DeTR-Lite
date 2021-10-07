@@ -458,26 +458,26 @@ def set_lr(optimizer, lr):
 
 def vis_data(images, targets, input_size):
     # vis data
+    img_h, img_w = input_size
     mean=(0.406, 0.456, 0.485)
     std=(0.225, 0.224, 0.229)
     mean = np.array(mean, dtype=np.float32)
     std = np.array(std, dtype=np.float32)
 
-    img = images[0].permute(1, 2, 0).cpu().numpy()[:, :, ::-1]
-    img = ((img * std + mean)*255).astype(np.uint8)
-    cv2.imwrite('1.jpg', img)
-
-    img_ = cv2.imread('1.jpg')
-    gt = targets[0]
-    print(gt.shape)
-    for i in range(gt.shape[0]):
-        if gt[i, 0] > 0.:
-            xmin, ymin, xmax, ymax = gt[i, -4:]
+    for bi in range(images.size(0)):
+        # image
+        img = images[bi].permute(1, 2, 0).cpu().numpy()[:, :, ::-1]
+        img = ((img * std + mean)*255).astype(np.uint8)
+        cv2.imwrite('1.jpg', img)
+        img_ = cv2.imread('1.jpg')
+        # bboox
+        for label in targets[bi]:
+            xmin, ymin, xmax, ymax = label[:-1]
             # print(xmin, ymin, xmax, ymax)
-            xmin *= input_size
-            ymin *= input_size
-            xmax *= input_size
-            ymax *= input_size
+            xmin *= img_w
+            ymin *= img_h
+            xmax *= img_w
+            ymax *= img_h
             cv2.rectangle(img_, (int(xmin), int(ymin)), (int(xmax), int(ymax)), (0, 0, 255), 2)
 
     cv2.imshow('img', img_)
