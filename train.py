@@ -472,13 +472,13 @@ def vis_data(images, targets, input_size):
         img_ = cv2.imread('1.jpg')
         # bboox
         for label in targets[bi]:
-            xmin, ymin, xmax, ymax = label[:-1]
-            # print(xmin, ymin, xmax, ymax)
-            xmin *= img_w
-            ymin *= img_h
-            xmax *= img_w
-            ymax *= img_h
-            cv2.rectangle(img_, (int(xmin), int(ymin)), (int(xmax), int(ymax)), (0, 0, 255), 2)
+            cx, cy, bw, bh = label['boxes'][:-1]
+            # print(x1, y1, x2, y2)
+            x1 = int((cx - bw / 2) * img_w)
+            y1 = int((cy - bh / 2) * img_h)
+            x2 = int((cx + bw / 2) * img_w)
+            y2 = int((cy + bh / 2) * img_h)
+            cv2.rectangle(img_, (x1, y1), (x2, y2), (0, 0, 255), 2)
 
     cv2.imshow('img', img_)
     cv2.waitKey(0)
