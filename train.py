@@ -189,6 +189,7 @@ def train():
     print('The dataset size:', len(dataset))
     print("----------------------------------------------------------")
 
+    print(not args.no_aux_loss)
     # build model
     model = DeTR(device=device,
                  batch_size=args.batch_size,
