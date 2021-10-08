@@ -23,7 +23,6 @@ class DeTR(nn.Module):
                  mlp_dim=2048,
                  dropout=0.1,
                  aux_loss=False,
-                 criterion=None,
                  backbone='r50',
                  use_nms=False):
         super().__init__()
@@ -37,7 +36,6 @@ class DeTR(nn.Module):
         self.hidden_dim = hidden_dim
         self.dropout = dropout
         self.aux_loss = aux_loss
-        self.criterion = criterion
         self.use_nms = use_nms
 
 

@@ -185,6 +185,29 @@ def train():
         print('unknow dataset !! Only support voc and coco !!')
         exit(0)
     
+    # dataloader
+    if args.distributed:
+        # dataloader
+        dataloader = torch.utils.data.DataLoader(
+                        dataset=dataset, 
+                        batch_size=args.batch_size, 
+                        collate_fn=detection_collate,
+                        num_workers=args.num_workers,
+                        pin_memory=True,
+                        sampler=torch.utils.data.distributed.DistributedSampler(dataset)
+                        )
+
+    else:
+        # dataloader
+        dataloader = torch.utils.data.DataLoader(
+                        dataset=dataset,
+                        shuffle=True,
+                        batch_size=args.batch_size, 
+                        collate_fn=detection_collate,
+                        num_workers=args.num_workers,
+                        pin_memory=True
+                        )
+
     print('Training model on:', dataset.name)
     print('The dataset size:', len(dataset))
     print("----------------------------------------------------------")
@@ -239,31 +262,6 @@ def train():
     # lr scheduler
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, args.lr_drop)
 
-    # distributed
-    if args.distributed:
-        model = DDP(model, device_ids=args.gpu)
-        # dataloader
-        dataloader = torch.utils.data.DataLoader(
-                        dataset=dataset, 
-                        batch_size=args.batch_size, 
-                        collate_fn=detection_collate,
-                        num_workers=args.num_workers,
-                        pin_memory=True,
-                        sampler=torch.utils.data.distributed.DistributedSampler(dataset)
-                        )
-
-    else:
-        model = model.train().to(device)
-        # dataloader
-        dataloader = torch.utils.data.DataLoader(
-                        dataset=dataset,
-                        shuffle=True,
-                        batch_size=args.batch_size, 
-                        collate_fn=detection_collate,
-                        num_workers=args.num_workers,
-                        pin_memory=True
-                        )
-
     # keep training
     if args.resume is not None:
         print('keep training model: %s' % (args.resume))
@@ -273,7 +271,7 @@ def train():
             model.load_state_dict(torch.load(args.resume, map_location=device))
 
     # EMA
-    ema = ModelEMA(model) if args.ema else None
+    ema = ModelEMA(model_without_ddp) if args.ema else None
 
     # use tfboard
     if args.tfboard:
