@@ -231,4 +231,4 @@ class Transformer(nn.Module):
         # decoder
         tgt = self.decoder(tgt, memory, pos, query_pos)
 
-        return tgt, memory.view(bs, c, h, w)
+        return tgt, memory.permute(0, 2, 1).view(bs, c, h, w)
