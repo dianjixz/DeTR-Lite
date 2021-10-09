@@ -376,6 +376,7 @@ if __name__ == "__main__":
                            img_size=img_size,
                            image_sets=[('2007', 'trainval')],
                            transform=BaseTransform(img_size, (0, 0, 0), (1, 1, 1)),
+                           color_transform=BaseTransform(img_size, (0, 0, 0), (1, 1, 1)),
                            target_transform=VOCAnnotationTransform(), 
                             mosaic=True,
                             mixup=True)
