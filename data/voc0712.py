@@ -25,6 +25,7 @@ except:
 
 
 VOC_CLASSES = (  # always index 0
+    'background',
     'aeroplane', 'bicycle', 'bird', 'boat',
     'bottle', 'bus', 'car', 'cat', 'chair',
     'cow', 'diningtable', 'dog', 'horse',
@@ -384,11 +385,14 @@ if __name__ == "__main__":
         cv2.imwrite('-1.jpg', img)
         img = cv2.imread('-1.jpg')
         for box in gt:
-            cx, cy, bw, bh, _ = box
+            cx, cy, bw, bh, cls_id = box
             x1 = (cx - bw / 2) * img_size
             y1 = (cy - bh / 2) * img_size
             x2 = (cx + bw / 2) * img_size
             y2 = (cy + bh / 2) * img_size
             img = cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), (0,0,255), 2)
+            mess = '%s' % (VOC_CLASSES[cls_id])
+            # mess = '%s' % (cls_name)
+            cv2.putText(img, mess, (int(x1), int(y1-5)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1)
         cv2.imshow('gt', img)
         cv2.waitKey(0)
