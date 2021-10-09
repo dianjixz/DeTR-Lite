@@ -25,7 +25,6 @@ except:
 
 
 VOC_CLASSES = (  # always index 0
-    'background',
     'aeroplane', 'bicycle', 'bird', 'boat',
     'bottle', 'bus', 'car', 'cat', 'chair',
     'cow', 'diningtable', 'dog', 'horse',
@@ -76,7 +75,7 @@ class VOCAnnotationTransform(object):
                 # scale height or width
                 cur_pt = cur_pt / width if i % 2 == 0 else cur_pt / height
                 bndbox.append(cur_pt)
-            label_idx = self.class_to_ind[name]
+            label_idx = self.class_to_ind[name] + 1
             bndbox.append(label_idx)
             res += [bndbox]  # [x1, y1, x2, y2, label_ind]
             # img_id = target.find('filename').text[:-4]
@@ -392,7 +391,7 @@ if __name__ == "__main__":
             x2 = (cx + bw / 2) * img_size
             y2 = (cy + bh / 2) * img_size
             img = cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), (0,0,255), 2)
-            mess = '%s' % (VOC_CLASSES[cls_id])
+            mess = '%s' % (VOC_CLASSES[cls_id - 1])
             # mess = '%s' % (cls_name)
             cv2.putText(img, mess, (int(x1), int(y1-5)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1)
         cv2.imshow('gt', img)

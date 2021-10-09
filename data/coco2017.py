@@ -159,7 +159,7 @@ class COCODataset(Dataset):
                 # ymax = ymin + h
                 if xmax > xmin and ymax > ymin:
                     label_ind = anno['category_id']
-                    cls_id = self.class_ids.index(label_ind)
+                    cls_id = self.class_ids.index(label_ind) + 1
                     xmin /= width
                     ymin /= height
                     xmax /= width
