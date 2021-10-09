@@ -9,8 +9,6 @@ from models.detr import DeTR
 
 
 parser = argparse.ArgumentParser(description='Detection Transformer')
-parser.add_argument('-bk', '--backbone', default='r18',
-                    help='r18, r34, r50, r101')
 parser.add_argument('-d', '--dataset', default='voc',
                     help='voc, coco-val, coco-test.')
 parser.add_argument('-size', '--input_size', default=640, type=int,
@@ -20,8 +18,10 @@ parser.add_argument('--trained_model', type=str,
                     help='Trained state_dict file path to open')
 parser.add_argument('--cuda', action='store_true', default=False,
                     help='Use cuda')
-parser.add_argument('-nms', '--use_nms', action='store_true', default=False,
+parser.add_argument('--use_nms', action='store_true', default=False, 
                     help='use nms.')
+parser.add_argument('--no_aux_loss', action='store_true',
+                    help="Disables auxiliary decoding losses (loss at each layer)")
 
 # model 
 parser.add_argument('-bk', '--backbone', default='r50', type=str, 
