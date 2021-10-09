@@ -11,8 +11,8 @@ from models.detr import DeTR
 parser = argparse.ArgumentParser(description='Detection Transformer')
 parser.add_argument('-d', '--dataset', default='voc',
                     help='voc, coco-val, coco-test.')
-parser.add_argument('-size', '--input_size', default=640, type=int,
-                    help='input_size')
+parser.add_argument('-size', '--img_size', default=640, type=int,
+                    help='img_size')
 parser.add_argument('--trained_model', type=str,
                     default='weights/', 
                     help='Trained state_dict file path to open')
@@ -46,10 +46,10 @@ args = parser.parse_args()
 
 
 
-def voc_test(model, device, input_size):
+def voc_test(model, device, img_size):
     evaluator = VOCAPIEvaluator(data_root=VOC_ROOT,
                                 device=device,
-                                transform=BaseTransform(input_size),
+                                transform=BaseTransform(img_size),
                                 labelmap=VOC_CLASSES,
                                 display=True
                                 )
@@ -58,26 +58,26 @@ def voc_test(model, device, input_size):
     evaluator.evaluate(model)
 
 
-def coco_test(model, device, input_size, test=False):
+def coco_test(model, device, img_size, test=False):
     if test:
         # test-dev
         print('test on test-dev 2017')
         evaluator = COCOAPIEvaluator(
                         data_dir=coco_root,
-                        img_size=input_size,
+                        img_size=img_size,
                         device=device,
                         testset=True,
-                        transform=BaseTransform(input_size)
+                        transform=BaseTransform(img_size)
                         )
 
     else:
         # eval
         evaluator = COCOAPIEvaluator(
                         data_dir=coco_root,
-                        img_size=input_size,
+                        img_size=img_size,
                         device=device,
                         testset=False,
-                        transform=BaseTransform(input_size)
+                        transform=BaseTransform(img_size)
                         )
 
     # COCO evaluation
@@ -108,7 +108,7 @@ if __name__ == '__main__':
         device = torch.device("cpu")
 
     # input size
-    input_size = args.input_size
+    img_size = args.img_size
 
     # build model
     model = DeTR(device=device,
@@ -137,8 +137,8 @@ if __name__ == '__main__':
     # evaluation
     with torch.no_grad():
         if args.dataset == 'voc':
-            voc_test(model, device, input_size)
+            voc_test(model, device, img_size)
         elif args.dataset == 'coco-val':
-            coco_test(model, device, input_size, test=False)
+            coco_test(model, device, img_size, test=False)
         elif args.dataset == 'coco-test':
-            coco_test(model, device, input_size, test=True)
+            coco_test(model, device, img_size, test=True)
