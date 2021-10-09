@@ -153,10 +153,6 @@ if __name__ == '__main__':
 
     class_colors = [(np.random.randint(255),np.random.randint(255),np.random.randint(255)) for _ in range(num_classes)]
 
-    # model
-    model_name = args.version
-    print('Model: ', model_name)
-
     # build model
     model = DeTR(device=device,
                  img_size=args.img_size,
