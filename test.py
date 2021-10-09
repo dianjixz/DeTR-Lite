@@ -7,7 +7,6 @@ import torch
 import torch.backends.cudnn as cudnn
 
 from data import *
-from data import config
 
 from models.detr import DeTR
 
