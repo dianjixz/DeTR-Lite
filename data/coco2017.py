@@ -39,7 +39,7 @@ class COCODataset(Dataset):
                  data_dir='COCO', 
                  img_size=640,
                  transform=None, 
-                 color_transformer=None,
+                 color_transform=None,
                  json_file='instances_train2017.json',
                  name='train2017', 
                  debug=False,
@@ -67,7 +67,7 @@ class COCODataset(Dataset):
         self.name = name
         # augmentation
         self.transform = transform
-        self.color_transformer = color_transformer
+        self.color_transform = color_transform
         self.mosaic = mosaic
         self.mixup = mixup
 
@@ -356,7 +356,7 @@ if __name__ == "__main__":
                 data_dir=coco_root,
                 img_size=img_size,
                 transform=BaseTransform(img_size, (0, 0, 0), (1, 1, 1)),
-                color_transformer=BaseTransform(img_size, (0, 0, 0), (1, 1, 1)),
+                color_transform=BaseTransform(img_size, (0, 0, 0), (1, 1, 1)),
                 debug=False,
                 mosaic=True,
                 mixup=True)
