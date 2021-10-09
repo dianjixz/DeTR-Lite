@@ -133,7 +133,7 @@ if __name__ == '__main__':
                  use_nms=args.use_nms).to(device)
 
     # load net
-    model.load_state_dict(torch.load(args.trained_model, map_location='cuda'))
+    model.load_state_dict(torch.load(args.trained_model, map_location='cuda'), strict=False)
     model.eval()
     print('Finished loading model!')
     model = model.to(device)
