@@ -187,7 +187,7 @@ class DeTR(nn.Module):
                 out_logits, out_bbox = outputs['pred_logits'], outputs['pred_boxes']
                 # [B, N, C] -> [N, C]
                 prob = out_logits[0].softmax(-1)
-                scores, labels = prob[..., 1:].max(-1)
+                scores, labels = prob[..., :-1].max(-1)
 
                 # convert to [x0, y0, x1, y1] format
                 bboxes = box_ops.box_cxcywh_to_xyxy(out_bbox)[0]
@@ -200,7 +200,7 @@ class DeTR(nn.Module):
                         out_logits_i, out_bbox_i = aux_outputs['pred_logits'], aux_outputs['pred_boxes']
                         # [B, N, C] -> [N, C]
                         prob_i = out_logits_i[0].softmax(-1)
-                        scores_i, labels_i = prob_i[..., 1:].max(-1)
+                        scores_i, labels_i = prob_i[..., :-1].max(-1)
 
                         # convert to [x0, y0, x1, y1] format
                         bboxes_i = box_ops.box_cxcywh_to_xyxy(out_bbox_i)[0]

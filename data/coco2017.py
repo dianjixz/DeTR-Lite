@@ -159,7 +159,7 @@ class COCODataset(Dataset):
                 # ymax = ymin + h
                 if xmax > xmin and ymax > ymin:
                     label_ind = anno['category_id']
-                    cls_id = self.class_ids.index(label_ind) + 1
+                    cls_id = self.class_ids.index(label_ind)
                     xmin /= width
                     ymin /= height
                     xmax /= width
@@ -376,7 +376,7 @@ if __name__ == "__main__":
             x2 = (cx + bw / 2) * img_size
             y2 = (cy + bh / 2) * img_size
             img = cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), (0,0,255), 2)
-            cls_id = coco_class_index[int(cls_id)-1]
+            cls_id = coco_class_index[int(cls_id)]
             cls_name = coco_class_labels[cls_id]
             mess = '%s' % (cls_name)
             # mess = '%s' % (cls_name)
