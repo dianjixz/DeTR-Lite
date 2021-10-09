@@ -384,8 +384,11 @@ if __name__ == "__main__":
         img = im.permute(1,2,0).numpy()[:, :, (2, 1, 0)].astype(np.uint8)
         cv2.imwrite('-1.jpg', img)
         img = cv2.imread('-1.jpg')
-        for box in gt:
-            cx, cy, bw, bh, cls_id = box
+        cls_gt = gt['labels']
+        box_gt = gt['boxes']
+        for i in range(len(cls_gt)):
+            cls_id = cls_gt[i]
+            cx, cy, bw, bh = box_gt[i]
             x1 = (cx - bw / 2) * img_size
             y1 = (cy - bh / 2) * img_size
             x2 = (cx + bw / 2) * img_size
