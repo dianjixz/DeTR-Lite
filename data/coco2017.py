@@ -365,14 +365,21 @@ if __name__ == "__main__":
         img = im.permute(1,2,0).numpy()[:, :, (2, 1, 0)].astype(np.uint8)
         cv2.imwrite('-1.jpg', img)
         img = cv2.imread('-1.jpg')
-
-        for box in gt:
-            cx, cy, bw, bh, _ = box
+        cls_gt = gt['labels']
+        box_gt = gt['boxes']
+        for i in range(len(cls_gt)):
+            cls_id = cls_gt[i]
+            cx, cy, bw, bh = box_gt[i]
             x1 = (cx - bw / 2) * img_size
             y1 = (cy - bh / 2) * img_size
             x2 = (cx + bw / 2) * img_size
             y2 = (cy + bh / 2) * img_size
             img = cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), (0,0,255), 2)
+            cls_id = coco_class_index[int(cls_id)-1]
+            cls_name = coco_class_labels[cls_id]
+            mess = '%s' % (cls_name)
+            # mess = '%s' % (cls_name)
+            cv2.putText(img, mess, (int(x1), int(y1-5)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1)
         cv2.imshow('gt', img)
         # cv2.imwrite(str(i)+'.jpg', img)
         cv2.waitKey(0)
