@@ -38,10 +38,6 @@ class DeTR(nn.Module):
         self.aux_loss = aux_loss
         self.use_nms = use_nms
 
-
-        # position embedding
-        self.pos_embed = self.position_embedding(num_pos_feats=hidden_dim//2,
-                                                 normalize=True)
         # object query
         self.query_embed = nn.Embedding(num_queries, hidden_dim)
 
@@ -80,8 +76,8 @@ class DeTR(nn.Module):
 
         
     # Position Embedding
-    def position_embedding(self, num_pos_feats=128, temperature=10000, normalize=False, scale=None):
-        h, w = self.img_size // 32, self.img_size // 32
+    def position_embedding(self, xs, num_pos_feats=128, temperature=10000, normalize=False, scale=None):
+        hs, ws = xs.shape[2:]
         
         if scale is not None and normalize is False:
             raise ValueError("normalize should be True if scale is passed")
@@ -90,12 +86,12 @@ class DeTR(nn.Module):
         # generate xy coord mat
         # y_embed = [[0, 0, 0, ...], [1, 1, 1, ...]...]
         # x_embed = [[0, 1, 2, ...], [0, 1, 2, ...]...]
-        y_embed, x_embed = torch.meshgrid([torch.arange(1, h+1, dtype=torch.float32), 
-                                        torch.arange(1, w+1, dtype=torch.float32)])
+        y_embed, x_embed = torch.meshgrid([torch.arange(1, hs+1, dtype=torch.float32), 
+                                        torch.arange(1, ws+1, dtype=torch.float32)])
         if normalize:
             eps = 1e-6
-            y_embed = y_embed / (h + eps) * scale
-            x_embed = x_embed / (w + eps) * scale
+            y_embed = y_embed / (hs + eps) * scale
+            x_embed = x_embed / (ws + eps) * scale
     
         # [H, W] -> [1, H, W]
         y_embed = y_embed[None, :, :].to(self.device)
@@ -163,8 +159,11 @@ class DeTR(nn.Module):
         x = self.backbone(x)
         x = self.input_proj(x)
 
+        # position embedding
+        pos_embed = self.position_embedding(x, num_pos_feats=self.hidden_dim//2, normalize=True)
+
         # transformer
-        h = self.transformer(x, self.pos_embed, self.query_embed.weight)[0]
+        h = self.transformer(x, pos_embed, self.query_embed.weight)[0]
 
         # output: [M, B, N, C] where M = num_decoder since we use all intermediate outputs of decoder
         outputs_class = self.cls_det(h)
