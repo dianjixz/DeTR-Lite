@@ -17,8 +17,6 @@ parser.add_argument('--conf_thresh', default=0.1, type=float,
                     help='Confidence threshold')
 parser.add_argument('--nms_thresh', default=0.50, type=float,
                     help='NMS threshold')
-parser.add_argument('--use_nms', action='store_true', default=False, 
-                    help='use nms.')
 parser.add_argument('--trained_model', type=str,
                     default='weights/', 
                     help='Trained state_dict file path to open')
