@@ -356,6 +356,7 @@ if __name__ == "__main__":
                 data_dir=coco_root,
                 img_size=img_size,
                 transform=BaseTransform(img_size, (0, 0, 0), (1, 1, 1)),
+                color_transformer=BaseTransform(img_size, (0, 0, 0), (1, 1, 1)),
                 debug=False,
                 mosaic=True,
                 mixup=True)
