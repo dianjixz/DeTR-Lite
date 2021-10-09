@@ -191,7 +191,7 @@ class DeTR(nn.Module):
 
                 # convert to [x0, y0, x1, y1] format
                 bboxes = box_ops.box_cxcywh_to_xyxy(out_bbox)[0]
-                bboxes = bboxes * self.img_size
+                # bboxes = bboxes * self.img_size
 
                 # intermediate outputs
                 if 'aux_outputs' in outputs:
