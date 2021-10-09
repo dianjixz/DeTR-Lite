@@ -204,7 +204,7 @@ class DeTR(nn.Module):
 
                         # convert to [x0, y0, x1, y1] format
                         bboxes_i = box_ops.box_cxcywh_to_xyxy(out_bbox_i)[0]
-                        bboxes_i = bboxes_i * self.img_size
+                        # bboxes_i = bboxes_i * self.img_size
 
                         scores = torch.cat([scores, scores_i], dim=0)
                         labels = torch.cat([labels, labels_i], dim=0)
