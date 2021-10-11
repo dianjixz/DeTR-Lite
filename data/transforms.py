@@ -111,7 +111,7 @@ def resize(image, target, size, max_size=None):
     ratios = tuple(float(s) / float(s_orig) for s, s_orig in zip(rescaled_image.size, image.size))
     ratio_width, ratio_height = ratios
 
-    target = targecopy()
+    target = target.copy()
     if "boxes" in target:
         boxes = target["boxes"]
         scaled_boxes = boxes * torch.as_tensor([ratio_width, ratio_height, ratio_width, ratio_height])
