@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import torch
 from torch.utils.data import Dataset
 
 import PIL
@@ -150,7 +151,7 @@ class COCODataset(Dataset):
                 print('No bbox !!!')
         # end here .
         targets = {"labels": labels,
-                   "boxes":  boxes}
+                   "boxes":  torch.from_numpy(boxes).float()}
 
         return img, targets, height, width
 
