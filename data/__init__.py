@@ -1,5 +1,5 @@
 from .voc0712 import VOCDetection, VOC_CLASSES, VOC_ROOT
-from .coco2017 import COCODataset, coco_root, coco_class_labels, coco_class_index
+from .coco2017 import CocoDetection, coco_root, coco_class_labels, coco_class_index
 from .transforms import TrainTransform, TestTransform
 import torch
 import cv2
