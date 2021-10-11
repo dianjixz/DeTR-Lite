@@ -62,7 +62,7 @@ class COCOAPIEvaluator():
 
             # load an image
             img, id_ = self.dataset.pull_image(index)
-            h, w, _ = img.shape
+            h, w, _ = img.size
             size = np.array([[w, h, w, h]])
 
             # preprocess

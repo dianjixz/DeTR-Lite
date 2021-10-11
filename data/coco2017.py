@@ -125,7 +125,7 @@ class COCODataset(Dataset):
 
         assert img is not None
 
-        height, width, channels = img.shape
+        height, width = img.size
         
         # COCOAnnotation Transform
         # start here :
