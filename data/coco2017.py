@@ -2,9 +2,11 @@ import os
 import numpy as np
 import torch
 from torch.utils.data import Dataset
+import torchvision
 
 import PIL
-from pycocotools.coco import COCO
+from pycocotools import mask as coco_mask
+
 
 
 coco_class_labels = ('background',
@@ -30,33 +32,22 @@ coco_class_index = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 1
 coco_root = '/mnt/share/ssd2/dataset/COCO/'
 
 
-class COCODataset(Dataset):
+class CocoDetection(torchvision.datasets.CocoDetection):
     """
     COCO dataset class.
     """
     def __init__(self, 
-                 data_dir='COCO', 
-                 transform=None, 
-                 json_file='instances_train2017.json',
-                 name='train2017'):
-        """
-        COCO dataset initialization. Annotation data are read into memory by COCO API.
-        Args:
-            data_dir (str): dataset root directory
-            json_file (str): COCO json file name
-            name (str): COCO data name (e.g. 'train2017' or 'val2017')
-            img_size (int): target image size after pre-processing
-            min_size (int): bounding boxes smaller than this are ignored
-            debug (bool): if True, only one data id is selected from the dataset
-        """
-        self.data_dir = data_dir
-        self.json_file = json_file
-        self.coco = COCO(self.data_dir+'annotations/'+self.json_file)
-        self.ids = self.coco.getImgIds()
-        self.class_ids = sorted(self.coco.getCatIds())
-        self.name = name
-        # augmentation
+                 data_dir,
+                 img_folder='train2017', 
+                 ann_file='annotations/' +' instances_train2017.json',
+                 transform=None,
+                 return_masks=False):
+        img_folder = os.path.join(data_dir, img_folder)
+        ann_file = os.path.join(data_dir, ann_file)
+        
+        super(CocoDetection, self).__init__(img_folder, ann_file)
         self.transform = transform
+        self.return_masks = return_masks
 
 
     def __len__(self):
@@ -64,112 +55,92 @@ class COCODataset(Dataset):
 
 
     def __getitem__(self, index):
-        im, gt, h, w = self.pull_item(index)
-        return im, gt
+        img, target = super(CocoDetection, self).__getitem__(index)
+        image_id = self.ids[index]
+        target = {'image_id': image_id, 'annotations': target}
+        img, target = self.load_img_targets(img, target)
+        if self.transforms is not None:
+            img, target = self.transforms(img, target)
+        return img, target
 
 
-    def pull_image(self, index):
-        id_ = self.ids[index]
-        img_file = os.path.join(self.data_dir, self.name,
-                                '{:012}'.format(id_) + '.jpg')
-        img =PIL.Image.open(img_file)  
-        # cv2.imread(img_file)
-
-        if self.json_file == 'instances_val5k.json' and img is None:
-            img_file = os.path.join(self.data_dir, 'train2017',
-                                    '{:012}'.format(id_) + '.jpg')
-            img =PIL.Image.open(img_file)  
-            # cv2.imread(img_file)
-
-        return img, id_
-
-
-    def pull_anno(self, index):
-        id_ = self.ids[index]
-
-        anno_ids = self.coco.getAnnIds(imgIds=[int(id_)], iscrowd=None)
-        annotations = self.coco.loadAnns(anno_ids)
-        
-        target = []
-        for anno in annotations:
-            if 'bbox' in anno:
-                xmin = np.max((0, anno['bbox'][0]))
-                ymin = np.max((0, anno['bbox'][1]))
-                xmax = xmin + anno['bbox'][2]
-                ymax = ymin + anno['bbox'][3]
-                
-                if anno['area'] > 0 and xmax >= xmin and ymax >= ymin:
-                    label_ind = anno['category_id']
-                    cls_id = self.class_ids.index(label_ind)
-
-                    target.append([xmin, ymin, xmax, ymax, cls_id])  # [xmin, ymin, xmax, ymax, label_ind]
-            else:
-                print('No bbox !!')
-        return target
+    def convert_coco_poly_to_mask(self, segmentations, height, width):
+        masks = []
+        for polygons in segmentations:
+            rles = coco_mask.frPyObjects(polygons, height, width)
+            mask = coco_mask.decode(rles)
+            if len(mask.shape) < 3:
+                mask = mask[..., None]
+            mask = torch.as_tensor(mask, dtype=torch.uint8)
+            mask = mask.any(dim=2)
+            masks.append(mask)
+        if masks:
+            masks = torch.stack(masks, dim=0)
+        else:
+            masks = torch.zeros((0, height, width), dtype=torch.uint8)
+        return masks
 
 
-    def load_img_targets(self, index):
-        anno_ids = self.coco.getAnnIds(imgIds=[int(index)], iscrowd=None)
-        annotations = self.coco.loadAnns(anno_ids)
+    def load_img_targets(self, image, target):
+        w, h = image.size
 
-        # load image and preprocess
-        img_file = os.path.join(self.data_dir, self.name,
-                                '{:012}'.format(index) + '.jpg')
-        img =PIL.Image.open(img_file)  
-        # cv2.imread(img_file)
-        
-        if self.json_file == 'instances_val5k.json' and img is None:
-            img_file = os.path.join(self.data_dir, 'train2017',
-                                    '{:012}'.format(index) + '.jpg')
-            img =PIL.Image.open(img_file)  
-            # cv2.imread(img_file)
+        image_id = target["image_id"]
+        image_id = torch.tensor([image_id])
 
-        assert img is not None
+        anno = target["annotations"]
 
-        height, width = img.size
-        
-        # COCOAnnotation Transform
-        # start here :
-        labels = []
-        boxes = []
-        for anno in annotations:
-            if 'bbox' in anno and anno['area'] > 0:   
-                xmin = np.max((0, anno['bbox'][0]))
-                ymin = np.max((0, anno['bbox'][1]))
-                xmax = np.min((width - 1, xmin + np.max((0, anno['bbox'][2] - 1))))
-                ymax = np.min((height - 1, ymin + np.max((0, anno['bbox'][3] - 1))))
+        anno = [obj for obj in anno if 'iscrowd' not in obj or obj['iscrowd'] == 0]
 
-                if xmax > xmin and ymax > ymin:
-                    # a valid target
-                    label_ind = anno['category_id']
-                    cls_id = self.class_ids.index(label_ind)
-                    labels.append(cls_id)
-                    boxes.append([xmin, ymin, xmax, ymax])
+        boxes = [obj["bbox"] for obj in anno]
+        # guard against no boxes via resizing
+        boxes = torch.as_tensor(boxes, dtype=torch.float32).reshape(-1, 4)
+        boxes[:, 2:] += boxes[:, :2]
+        boxes[:, 0::2].clamp_(min=0, max=w)
+        boxes[:, 1::2].clamp_(min=0, max=h)
 
+        classes = [obj["category_id"] for obj in anno]
+        classes = torch.tensor(classes, dtype=torch.int64)
 
-            else:
-                print('No bbox !!!')
-        # end here .
-        targets = {"labels": labels,
-                   "boxes":  torch.tensor(boxes).float()}
+        if self.return_masks:
+            segmentations = [obj["segmentation"] for obj in anno]
+            masks = self.convert_coco_poly_to_mask(segmentations, h, w)
 
-        return img, targets, height, width
+        keypoints = None
+        if anno and "keypoints" in anno[0]:
+            keypoints = [obj["keypoints"] for obj in anno]
+            keypoints = torch.as_tensor(keypoints, dtype=torch.float32)
+            num_keypoints = keypoints.shape[0]
+            if num_keypoints:
+                keypoints = keypoints.view(num_keypoints, -1, 3)
 
+        keep = (boxes[:, 3] > boxes[:, 1]) & (boxes[:, 2] > boxes[:, 0])
+        boxes = boxes[keep]
+        classes = classes[keep]
+        if self.return_masks:
+            masks = masks[keep]
+        if keypoints is not None:
+            keypoints = keypoints[keep]
 
-    def pull_item(self, index):
-        # load a image
-        id_ = self.ids[index]
-        img, targets, height, width = self.load_img_targets(id_)
+        target = {}
+        target["boxes"] = boxes
+        target["labels"] = classes
+        if self.return_masks:
+            target["masks"] = masks
+        target["image_id"] = image_id
+        if keypoints is not None:
+            target["keypoints"] = keypoints
 
-        # check targets
-        if targets is None:
-            targets["labels": 80] # the background index
-            targets["boxes": [0, 0, 0, 0]]
+        # for conversion to coco api
+        area = torch.tensor([obj["area"] for obj in anno])
+        iscrowd = torch.tensor([obj["iscrowd"] if "iscrowd" in obj else 0 for obj in anno])
+        target["area"] = area[keep]
+        target["iscrowd"] = iscrowd[keep]
 
-        # augment
-        img, targets = self.transform(img, targets)
+        target["orig_size"] = torch.as_tensor([int(h), int(w)])
+        target["size"] = torch.as_tensor([int(h), int(w)])
 
-        return img, targets, height, width
+        return image, target
+
 
 
 if __name__ == "__main__":
@@ -180,10 +151,9 @@ if __name__ == "__main__":
     std = np.array([0.229, 0.224, 0.225])
 
     # dataset
-    dataset = COCODataset(
-                data_dir=coco_root,
-                transform=TrainTransform,
-                debug=False)
+    dataset = CocoDetection(
+                data_dir=coco_root,                
+                transform=TrainTransform)
     
     for i in range(1000):
         img, targets, h, w = dataset.pull_item(i)
