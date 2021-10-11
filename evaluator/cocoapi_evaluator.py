@@ -13,12 +13,10 @@ class COCOAPIEvaluator():
     All the data in the val2017 dataset are processed \
     and evaluated by COCO API.
     """
-    def __init__(self, data_dir, img_size, device, testset=False, transform=None):
+    def __init__(self, data_dir, device, testset=False, transform=None):
         """
         Args:
             data_dir (str): dataset root directory
-            img_size (int): image size after preprocess. images are resized \
-                to squares whose shape is (img_size, img_size).
             confthre (float):
                 confidence threshold ranging from 0 to 1, \
                 which is defined in the config file.
@@ -34,12 +32,9 @@ class COCOAPIEvaluator():
             name='val2017'
 
         self.dataset = COCODataset(data_dir=data_dir,
-                                   img_size=img_size,
                                    json_file=json_file,
-                                   transform=None,
+                                   transform=transform,
                                    name=name)
-        self.img_size = img_size
-        self.transform = transform
         self.device = device
         self.ap50_95 = 0.
         self.ap50 = 0.
@@ -71,8 +66,7 @@ class COCOAPIEvaluator():
             size = np.array([[w, h, w, h]])
 
             # preprocess
-            img, _, _, scale, offset = self.transform(img)
-            x = torch.from_numpy(img[:, :, (2, 1, 0)]).permute(2, 0, 1).float()
+            img, _,  = self.transform(img)
             x = x.unsqueeze(0).to(self.device)
             
             id_ = int(id_)
@@ -82,8 +76,6 @@ class COCOAPIEvaluator():
                 outputs = model(x)
                 bboxes, scores, cls_inds = outputs
                 # map the boxes to original image
-                bboxes -= offset
-                bboxes /= scale
                 bboxes *= size
 
             for i, box in enumerate(bboxes):

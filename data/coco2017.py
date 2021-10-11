@@ -63,7 +63,7 @@ class COCODataset(Dataset):
 
 
     def __getitem__(self, index):
-        im, gt, h, w, scale, offset = self.pull_item(index)
+        im, gt, h, w = self.pull_item(index)
         return im, gt
 
 
@@ -152,13 +152,13 @@ class COCODataset(Dataset):
         targets = {"labels": labels,
                    "boxes":  boxes}
 
-        return img, targets
+        return img, targets, height, width
 
 
     def pull_item(self, index):
         # load a image
         id_ = self.ids[index]
-        img, targets = self.load_img_targets(id_)
+        img, targets, height, width = self.load_img_targets(id_)
 
         # check targets
         if targets is None:
@@ -168,7 +168,7 @@ class COCODataset(Dataset):
         # augment
         img, targets = self.transform(img, targets)
 
-        return img, targets
+        return img, targets, height, width
 
 
 if __name__ == "__main__":
@@ -185,7 +185,7 @@ if __name__ == "__main__":
                 debug=False)
     
     for i in range(1000):
-        img, targets = dataset.pull_item(i)
+        img, targets, h, w = dataset.pull_item(i)
         # [C, H, W] -> [H, W, C], tensor -> numpy
         img = img.permute(1, 2, 0).numpy()
         img = (img.numpy() * std + mean) * 255. 

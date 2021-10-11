@@ -172,7 +172,6 @@ def train():
                               transform=TrainTransform())
 
         evaluator = COCOAPIEvaluator(data_dir=data_dir,
-                                     img_size=args.img_size,
                                      device=device,
                                      transform=TestTransform())
     
