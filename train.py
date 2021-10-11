@@ -15,12 +15,13 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 
 from data import VOC_CLASSES, VOC_ROOT, VOCDetection
 from data import coco_root, COCODataset
-from data import TrainTransform, TestTransform, detection_collate
+from data import BaseTransform, detection_collate
 
 from evaluator.cocoapi_evaluator import COCOAPIEvaluator
 from evaluator.vocapi_evaluator import VOCAPIEvaluator
 
 from utils import distributed_utils
+from utils.augmentations import BasicAugmentation, ColorAugmentation
 from utils.modules import ModelEMA
 from utils.matcher import build_matcher
 from utils.loss import build_criterion
@@ -169,11 +170,16 @@ def train():
         data_dir = coco_root
         num_classes = 80
         dataset = COCODataset(data_dir=data_dir,
-                              transform=TrainTransform())
+                              img_size=args.img_size,
+                              transform=BasicAugmentation(args.img_size),
+                              color_transformer=ColorAugmentation(args.img_size),
+                              mosaic=args.mosaic,
+                              mixup=args.mixup)
 
         evaluator = COCOAPIEvaluator(data_dir=data_dir,
+                                     img_size=args.img_size,
                                      device=device,
-                                     transform=TestTransform())
+                                     transform=BaseTransform(args.img_size))
     
     else:
         print('unknow dataset !! Only support voc and coco !!')
@@ -451,9 +457,9 @@ def set_lr(optimizer, lr):
         param_group['lr'] = lr
 
 
-def vis_data(images, targets):
+def vis_data(images, targets, input_size):
     # vis data
-
+    img_h = img_w = input_size
     mean=(0.406, 0.456, 0.485)
     std=(0.225, 0.224, 0.229)
     mean = np.array(mean, dtype=np.float32)
@@ -465,8 +471,6 @@ def vis_data(images, targets):
         img = ((img * std + mean)*255).astype(np.uint8)
         cv2.imwrite('1.jpg', img)
         img_ = cv2.imread('1.jpg')
-        img_h, img_w = img_.shape[:2]
-        
         # bboox
         bboxes = targets[bi]['boxes']
         for bbox in bboxes:
