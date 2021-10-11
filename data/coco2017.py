@@ -142,12 +142,8 @@ class COCODataset(Dataset):
                     # a valid target
                     label_ind = anno['category_id']
                     cls_id = self.class_ids.index(label_ind)
-                    cx = (xmax + xmin) / 2.0
-                    cy = (ymax + ymin) / 2.0
-                    bw = xmax - xmin
-                    bh = ymax - ymin
                     labels.append(cls_id)
-                    boxes.append([cx, cy, bw, bh])
+                    boxes.append([xmin, ymin, xmax, ymax])
 
 
             else:
@@ -179,8 +175,8 @@ if __name__ == "__main__":
     from transforms import TrainTransform, TestTransform
     import cv2
 
-    mean = np.array([[0.485, 0.456, 0.406]])
-    std = np.array([[0.229, 0.224, 0.225]])
+    mean = np.array([0.485, 0.456, 0.406])
+    std = np.array([0.229, 0.224, 0.225])
 
     # dataset
     dataset = COCODataset(
@@ -202,11 +198,11 @@ if __name__ == "__main__":
         box_gt = targets["boxes"]
         for i in range(len(cls_gt)):
             cls_id = cls_gt[i]
-            cx, cy, bw, bh = box_gt[i]
-            x1 = (cx - bw / 2) * img_w
-            y1 = (cy - bh / 2) * img_h
-            x2 = (cx + bw / 2) * img_w
-            y2 = (cy + bh / 2) * img_h
+            x1, y1, x2, y2 = box_gt[i]
+            x1 = x1 * img_w
+            y1 = y1 * img_h
+            x2 = x2 * img_w
+            y2 = y2 * img_h
             img = cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), (0,0,255), 2)
             cls_id = coco_class_index[int(cls_id)]
             cls_name = coco_class_labels[cls_id]
