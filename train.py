@@ -169,7 +169,6 @@ def train():
         data_dir = coco_root
         num_classes = 80
         dataset = COCODataset(data_dir=data_dir,
-                              img_size=args.img_size,
                               transform=TrainTransform())
 
         evaluator = COCOAPIEvaluator(data_dir=data_dir,
