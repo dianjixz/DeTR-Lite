@@ -1,9 +1,7 @@
 import os
 import numpy as np
-import random
-
-import torch
 from torch.utils.data import Dataset
+
 import PIL
 from pycocotools.coco import COCO
 
@@ -178,7 +176,7 @@ class COCODataset(Dataset):
 
 
 if __name__ == "__main__":
-    from .transforms import TrainTransform, TestTransform
+    from transforms import TrainTransform, TestTransform
     import cv2
 
     mean = np.array([[0.485, 0.456, 0.406]])
