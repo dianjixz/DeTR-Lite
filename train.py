@@ -331,16 +331,8 @@ def train():
             if evaluator is None:
                 print('No evaluator ... go on training.')
                 print('Saving state, epoch:', epoch + 1)
-                try:
-                    torch.save(model_eval.state_dict(), os.path.join(path_to_save, 
-                                'DeTR_' + repr(epoch + 1) + '.pth'),
-                                _use_new_zipfile_serialization=False
-                                )  
-                except:
-                    print('The version of Torch is lower than 1.7.0.')
-                    torch.save(model_eval.state_dict(), os.path.join(path_to_save, 
-                                'DeTR_' + repr(epoch + 1) + '.pth')
-                                )  
+                torch.save(model_eval.state_dict(), os.path.join(path_to_save, 
+                            'DeTR_' + repr(epoch + 1) + '.pth'))  
             else:
                 print('eval ...')
                 # check ema
@@ -364,8 +356,8 @@ def train():
                         # save model
                         print('Saving state, epoch:', epoch + 1)
                         torch.save(model_eval.state_dict(), os.path.join(path_to_save, 
-                                    'DeTR_' + repr(epoch + 1) + '_' + str(round(best_map*100., 2)) + '.pth')
-                                    )  
+                                    'DeTR_' + repr(epoch + 1) + '_' + str(round(best_map*100., 2)) + '.pth'))
+
                     if args.tfboard:
                         if args.dataset == 'voc':
                             tblogger.add_scalar('07test/mAP', evaluator.map, epoch)
