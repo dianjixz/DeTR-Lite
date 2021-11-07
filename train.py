@@ -100,7 +100,7 @@ def parse_args():
                         help="Number of query slots")
     
     # dataset
-    parser.add_argument('--root', '--data_root', default='/mnt/share/ssd2/dataset',
+    parser.add_argument('-root', '--data_root', default='/mnt/share/ssd2/dataset',
                         help='root to dataset')
     parser.add_argument('-d', '--dataset', default='coco',
                         help='voc or coco')
@@ -387,7 +387,7 @@ def train():
 
 def build_dataset(args, img_size, device):
     if args.dataset == 'voc':
-        data_dir = os.path.join(args.root, 'VOCdevkit')
+        data_dir = os.path.join(args.data_root, 'VOCdevkit')
         num_classes = 20
         dataset = VOCDetection(
                         data_dir=data_dir,
@@ -399,7 +399,7 @@ def build_dataset(args, img_size, device):
                         transform=ValTransforms(img_size))
 
     elif args.dataset == 'coco':
-        data_dir = os.path.join(args.root, 'COCO')
+        data_dir = os.path.join(args.data_root, 'COCO')
         num_classes = 80
         dataset = COCODataset(
                     data_dir=data_dir,

@@ -12,7 +12,7 @@ from models.detr import DeTR
 
 parser = argparse.ArgumentParser(description='DeTR Detection')
 # dataset
-parser.add_argument('--root', '--data_root', default='/mnt/share/ssd2/dataset',
+parser.add_argument('-root', '--data_root', default='/mnt/share/ssd2/dataset',
                     help='root to dataset')
 parser.add_argument('-d', '--dataset', default='coco',
                     help='voc or coco')
@@ -93,15 +93,15 @@ if __name__ == '__main__':
     if args.dataset == 'voc':
         print('eval on voc ...')
         num_classes = 20
-        data_dir = os.path.join(args.root, 'VOCdevkit')
+        data_dir = os.path.join(args.data_root, 'VOCdevkit')
     elif args.dataset == 'coco-val':
         print('eval on coco-val ...')
         num_classes = 80
-        data_dir = os.path.join(args.root, 'COCO')
+        data_dir = os.path.join(args.data_root, 'COCO')
     elif args.dataset == 'coco-test':
         print('eval on coco-test-dev ...')
         num_classes = 80
-        data_dir = os.path.join(args.root, 'COCO')
+        data_dir = os.path.join(args.data_root, 'COCO')
     else:
         print('unknow dataset !! we only support voc, coco-val, coco-test !!!')
         exit(0)

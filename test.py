@@ -13,12 +13,12 @@ from models.detr import DeTR
 
 parser = argparse.ArgumentParser(description='DeTR Detection')
 # dataset
-parser.add_argument('--root', '--data_root', default='/mnt/share/ssd2/dataset',
+parser.add_argument('-root', '--data_root', default='/mnt/share/ssd2/dataset',
                     help='root to dataset')
 parser.add_argument('-d', '--dataset', default='coco',
                     help='voc or coco')
 # basic
-parser.add_argument('-size', '--img_size', default=640, type=int,
+parser.add_argument('-size', '--img_size', default=800, type=int,
                     help='img_size')
 parser.add_argument('--trained_model', default='weight/',
                     type=str, help='Trained state_dict file path to open')
@@ -169,14 +169,14 @@ if __name__ == '__main__':
 
     # dataset and evaluator
     if args.dataset == 'voc':
-        data_dir = os.path.join(args.root, 'VOCdevkit')
+        data_dir = os.path.join(args.data_root, 'VOCdevkit')
         class_names = VOC_CLASSES
         class_indexs = None
         num_classes = 20
-        dataset = VOCDetection(data_dir=data_dir)
+        dataset = VOCDetection(data_dir=data_dir, image_sets=[('2007', 'test')])
 
     elif args.dataset == 'coco':
-        data_dir = os.path.join(args.root, 'COCO')
+        data_dir = os.path.join(args.data_root, 'COCO')
         class_names = coco_class_labels
         class_indexs = coco_class_index
         num_classes = 80
