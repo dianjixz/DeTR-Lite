@@ -5,25 +5,18 @@
 """
 
 import torch
-import torch.nn as nn
-import torch.backends.cudnn as cudnn
-from torch.autograd import Variable
-from data import VOCDetection
+from data.voc0712 import VOCDetection, VOC_CLASSES
 import sys
 import os
 import time
 import numpy as np
 import pickle
-
-if sys.version_info[0] == 2:
-    import xml.etree.cElementTree as ET
-else:
-    import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as ET
 
 
 class VOCAPIEvaluator():
     """ VOC AP Evaluation class """
-    def __init__(self, data_root, device, transform, labelmap, set_type='test', year='2007', display=False):
+    def __init__(self, data_root, device, transform, labelmap=VOC_CLASSES, set_type='test', year='2007', display=False):
         self.data_root = data_root
         self.device = device
         self.transform = transform
@@ -60,21 +53,18 @@ class VOCAPIEvaluator():
         for i in range(num_images):
             im, _ = self.dataset.pull_image(i)
             h, w, _ = im.shape
-            size = np.array([[w, h, w, h]])
+            scale = np.array([[w, h, w, h]])
 
             # preprocess
-            img, _, _, scale, offset = self.transform(im)
-            x = torch.from_numpy(img[:, :, (2, 1, 0)]).permute(2, 0, 1).float()
+            x = self.transform(im)[0]
             x = x.unsqueeze(0).to(self.device)
 
             t0 = time.time()
             # forward
             bboxes, scores, cls_inds = net(x)
             detect_time = time.time() - t0
-            # map the boxes to original image
-            bboxes -= offset
-            bboxes /= scale
-            bboxes *= size
+            # rescale
+            bboxes *= scale
 
             for j in range(len(self.labelmap)):
                 inds = np.where(cls_inds == j)[0]

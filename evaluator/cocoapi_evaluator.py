@@ -13,7 +13,7 @@ class COCOAPIEvaluator():
     All the data in the val2017 dataset are processed \
     and evaluated by COCO API.
     """
-    def __init__(self, data_dir, img_size, device, testset=False, transform=None):
+    def __init__(self, data_dir, device, testset=False, transform=None):
         """
         Args:
             data_dir (str): dataset root directory
@@ -38,9 +38,9 @@ class COCOAPIEvaluator():
                                    json_file=json_file,
                                    transform=None,
                                    name=name)
-        self.img_size = img_size
         self.transform = transform
         self.device = device
+        self.map = 0.
         self.ap50_95 = 0.
         self.ap50 = 0.
 
@@ -68,11 +68,10 @@ class COCOAPIEvaluator():
             # load an image
             img, id_ = self.dataset.pull_image(index)
             h, w, _ = img.shape
-            size = np.array([[w, h, w, h]])
+            scale = np.array([[w, h, w, h]])
 
             # preprocess
-            img, _, _, scale, offset = self.transform(img)
-            x = torch.from_numpy(img[:, :, (2, 1, 0)]).permute(2, 0, 1).float()
+            x = self.transform(img)[0]
             x = x.unsqueeze(0).to(self.device)
             
             id_ = int(id_)
@@ -81,10 +80,8 @@ class COCOAPIEvaluator():
             with torch.no_grad():
                 outputs = model(x)
                 bboxes, scores, cls_inds = outputs
-                # map the boxes to original image
-                bboxes -= offset
-                bboxes /= scale
-                bboxes *= size
+                # rescale
+                bboxes *= scale
 
             for i, box in enumerate(bboxes):
                 x1 = float(box[0])
@@ -109,22 +106,24 @@ class COCOAPIEvaluator():
             if self.testset:
                 json.dump(data_dict, open('det_coco_2017.json', 'w'))
                 cocoDt = cocoGt.loadRes('det_coco_2017.json')
+                return -1, -1
             else:
                 _, tmp = tempfile.mkstemp()
                 json.dump(data_dict, open(tmp, 'w'))
                 cocoDt = cocoGt.loadRes(tmp)
-            cocoEval = COCOeval(self.dataset.coco, cocoDt, annType[1])
-            cocoEval.params.imgIds = ids
-            cocoEval.evaluate()
-            cocoEval.accumulate()
-            cocoEval.summarize()
+                cocoEval = COCOeval(self.dataset.coco, cocoDt, annType[1])
+                cocoEval.params.imgIds = ids
+                cocoEval.evaluate()
+                cocoEval.accumulate()
+                cocoEval.summarize()
 
-            ap50_95, ap50 = cocoEval.stats[0], cocoEval.stats[1]
-            print('ap50_95 : ', ap50_95)
-            print('ap50 : ', ap50)
-            self.ap50_95 = ap50_95
-            self.ap50 = ap50
+                ap50_95, ap50 = cocoEval.stats[0], cocoEval.stats[1]
+                print('ap50_95 : ', ap50_95)
+                print('ap50 : ', ap50)
+                self.map = ap50_95
+                self.ap50_95 = ap50_95
+                self.ap50 = ap50
 
-            return ap50_95, ap50
+                return ap50_95, ap50
         else:
             return -1, -1

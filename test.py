@@ -7,35 +7,33 @@ import torch
 import torch.backends.cudnn as cudnn
 
 from data import *
+from data.transforms import ValTransforms
 
 from models.detr import DeTR
 
 parser = argparse.ArgumentParser(description='DeTR Detection')
-parser.add_argument('-d', '--dataset', default='voc',
-                    help='voc, coco-val.')
+# dataset
+parser.add_argument('--root', '--data_root', default='/mnt/share/ssd2/dataset',
+                    help='root to dataset')
+parser.add_argument('-d', '--dataset', default='coco',
+                    help='voc or coco')
+# basic
 parser.add_argument('-size', '--img_size', default=640, type=int,
-                    help='input_size')
+                    help='img_size')
 parser.add_argument('--trained_model', default='weight/',
                     type=str, help='Trained state_dict file path to open')
-parser.add_argument('--conf_thresh', default=0.1, type=float,
-                    help='Confidence threshold')
-parser.add_argument('--nms_thresh', default=0.50, type=float,
-                    help='NMS threshold')
-parser.add_argument('--use_nms', action='store_true', default=False, 
-                    help='use nms.')
-parser.add_argument('--no_aux_loss', action='store_true',
-                    help="Disables auxiliary decoding losses (loss at each layer)")
 parser.add_argument('-vs', '--visual_threshold', default=0.3, type=float,
                     help='Final confidence threshold')
+parser.add_argument('--show', action='store_true', default=False, 
+                    help='show visualization results.')
 parser.add_argument('--cuda', action='store_true', default=False, 
                     help='use cuda.')
-
 # model 
 parser.add_argument('-bk', '--backbone', default='r50', type=str, 
                     help='backbone')
-parser.add_argument('--enc_layers', default=6, type=int,
+parser.add_argument('--num_encoders', default=6, type=int,
                     help="Number of encoding layers in the transformer")
-parser.add_argument('--dec_layers', default=6, type=int,
+parser.add_argument('--num_decoders', default=6, type=int,
                     help="Number of decoding layers in the transformer")
 parser.add_argument('--mlp_dim', default=2048, type=int,
                     help="Intermediate size of the feedforward layers in the transformer blocks")
@@ -43,79 +41,117 @@ parser.add_argument('--hidden_dim', default=256, type=int,
                     help="Size of the embeddings (dimension of the transformer)")
 parser.add_argument('--dropout', default=0.1, type=float,
                     help="Dropout applied in the transformer")
-parser.add_argument('--nheads', default=8, type=int,
+parser.add_argument('--num_heads', default=8, type=int,
                     help="Number of attention heads inside the transformer's attentions")
 parser.add_argument('--num_queries', default=100, type=int,
                     help="Number of query slots")
+parser.add_argument('--no_aux_loss', action='store_true',
+                    help="Disables auxiliary decoding losses (loss at each layer)")
+parser.add_argument('--conf_thresh', default=0.1, type=float,
+                    help='Confidence threshold')
+parser.add_argument('--nms_thresh', default=0.50, type=float,
+                    help='NMS threshold')
+parser.add_argument('--use_nms', action='store_true', default=False, 
+                    help='use nms.')
 
 args = parser.parse_args()
 
 
-def vis(img, bboxes, scores, cls_inds, thresh, class_colors, class_names, class_indexs=None, dataset='voc'):
-    if dataset == 'voc':
-        for i, box in enumerate(bboxes):
-            cls_indx = cls_inds[i]
-            xmin, ymin, xmax, ymax = box
-            if scores[i] > thresh:
-                cv2.rectangle(img, (int(xmin), int(ymin)), (int(xmax), int(ymax)), class_colors[int(cls_indx)], 1)
-                cv2.rectangle(img, (int(xmin), int(abs(ymin)-20)), (int(xmax), int(ymin)), class_colors[int(cls_indx)], -1)
-                mess = '%s: %.3f' % (class_names[int(cls_indx)], scores[i])
-                cv2.putText(img, mess, (int(xmin), int(ymin-5)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1)
+def plot_bbox_labels(img, bbox, label=None, cls_color=None, text_scale=0.4):
+    x1, y1, x2, y2 = bbox
+    x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+    t_size = cv2.getTextSize(label, 0, fontScale=1, thickness=2)[0]
+    # plot bbox
+    cv2.rectangle(img, (x1, y1), (x2, y2), cls_color, 2)
+    
+    if label is not None:
+        # plot title bbox
+        cv2.rectangle(img, (x1, y1-t_size[1]), (int(x1 + t_size[0] * text_scale), y1), cls_color, -1)
+        # put the test on the title bbox
+        cv2.putText(img, label, (int(x1), int(y1 - 5)), 0, text_scale, (0, 0, 0), 1, lineType=cv2.LINE_AA)
 
-    elif dataset == 'coco-val' and class_indexs is not None:
-        for i, box in enumerate(bboxes):
-            cls_indx = cls_inds[i]
-            xmin, ymin, xmax, ymax = box
-            if scores[i] > thresh:
-                cv2.rectangle(img, (int(xmin), int(ymin)), (int(xmax), int(ymax)), class_colors[int(cls_indx)], 1)
-                cv2.rectangle(img, (int(xmin), int(abs(ymin)-20)), (int(xmax), int(ymin)), class_colors[int(cls_indx)], -1)
-                cls_id = class_indexs[int(cls_indx)]
-                cls_name = class_names[cls_id]
-                mess = '%s: %.3f' % (cls_name, scores[i])
-                # mess = '%s' % (cls_name)
-                cv2.putText(img, mess, (int(xmin), int(ymin-5)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1)
+    return img
+
+
+def visualize(img, 
+              bboxes, 
+              scores, 
+              cls_inds, 
+              vis_thresh, 
+              class_colors, 
+              class_names, 
+              class_indexs=None, 
+              dataset_name='voc'):
+    ts = 0.4
+    for i, bbox in enumerate(bboxes):
+        if scores[i] > vis_thresh:
+            cls_id = int(cls_inds[i])
+            if dataset_name == 'coco':
+                cls_color = class_colors[cls_id]
+                cls_id = class_indexs[cls_id]
+            else:
+                cls_color = class_colors[cls_id]
+                
+            if len(class_names) > 1:
+                mess = '%s: %.2f' % (class_names[cls_id], scores[i])
+            else:
+                cls_color = [255, 0, 0]
+                mess = None
+            img = plot_bbox_labels(img, bbox, mess, cls_color, text_scale=ts)
 
     return img
         
 
-def test(net, device, testset, transform, thresh, class_colors=None, class_names=None, class_indexs=None, dataset='voc'):
-    num_images = len(testset)
-    save_path = os.path.join('det_results/images/', args.dataset)
+def test(args,
+         net, 
+         device, 
+         dataset,
+         transforms=None,
+         vis_thresh=0.4, 
+         class_colors=None, 
+         class_names=None, 
+         class_indexs=None, 
+         show=False,
+         dataset_name='coco'):
+    num_images = len(dataset)
+    save_path = os.path.join('det_results/', args.dataset, args.version)
     os.makedirs(save_path, exist_ok=True)
 
     for index in range(num_images):
         print('Testing image {:d}/{:d}....'.format(index+1, num_images))
-        img_raw, _ = testset.pull_image(index)
-        h, w, _ = img_raw.shape
-        size = np.array([[w, h, w, h]])
+        image, _ = dataset.pull_image(index)
 
-        # preprocess
-        img, _, _, scale, offset = transform(img_raw)
-        x = torch.from_numpy(img[:, :, (2, 1, 0)]).permute(2, 0, 1).float()
+        h, w, _ = image.shape
+        scale = np.array([[w, h, w, h]])
+
+        # prepare
+        x = transforms(image)[0]
         x = x.unsqueeze(0).to(device)
 
         t0 = time.time()
-        # forward
+        # inference
         bboxes, scores, cls_inds = net(x)
         print("detection time used ", time.time() - t0, "s")
         
-        # map the boxes to original image
-        bboxes -= offset
-        bboxes /= scale
-        bboxes *= size
+        # rescale
+        bboxes *= scale
 
-        img_processed = vis(img_raw, 
-                            bboxes, 
-                            scores, 
-                            cls_inds, 
-                            thresh, 
-                            class_colors, 
-                            class_names, 
-                            class_indexs, 
-                            dataset)
-        cv2.imshow('detection', img_processed)
-        cv2.waitKey(0)
-        print('Saving the' + str(index) + '-th image ...')
+        # vis detection
+        img_processed = visualize(
+                            img=image,
+                            bboxes=bboxes,
+                            scores=scores,
+                            cls_inds=cls_inds,
+                            vis_thresh=vis_thresh,
+                            class_colors=class_colors,
+                            class_names=class_names,
+                            class_indexs=class_indexs,
+                            dataset_name=dataset_name
+                            )
+        if show:
+            cv2.imshow('detection', img_processed)
+            cv2.waitKey(0)
+        # save result
         cv2.imwrite(os.path.join(save_path, str(index).zfill(6) +'.jpg'), img_processed)
 
 
@@ -129,62 +165,60 @@ if __name__ == '__main__':
         device = torch.device("cpu")
 
     # input size
-    input_size = args.img_size
+    img_size = args.img_size
 
-    # dataset
+    # dataset and evaluator
     if args.dataset == 'voc':
-        print('test on voc ...')
+        data_dir = os.path.join(args.root, 'VOCdevkit')
         class_names = VOC_CLASSES
         class_indexs = None
         num_classes = 20
-        dataset = VOCDetection(root=VOC_ROOT, 
-                               img_size=args.img_size,
-                               image_sets=[('2007', 'test')])
+        dataset = VOCDetection(data_dir=data_dir)
 
-    elif args.dataset == 'coco-val':
-        print('test on coco-val ...')
+    elif args.dataset == 'coco':
+        data_dir = os.path.join(args.root, 'COCO')
         class_names = coco_class_labels
         class_indexs = coco_class_index
         num_classes = 80
-        dataset = COCODataset(data_dir=coco_root,
-                              img_size=args.img_size,
-                              json_file='instances_val2017.json',
-                              name='val2017')
+        dataset = COCODataset(
+                    data_dir=data_dir,
+                    json_file='instances_val2017.json')
+    
+    else:
+        print('unknow dataset !! Only support voc and coco !!')
+        exit(0)
 
-    class_colors = [(np.random.randint(255),np.random.randint(255),np.random.randint(255)) for _ in range(num_classes)]
+    np.random.seed(0)
+    class_colors = [(np.random.randint(255),
+                     np.random.randint(255),
+                     np.random.randint(255)) for _ in range(num_classes)]
 
     # build model
-    model = DeTR(device=device,
+    model = DeTR(args=args,
+                 device=device,
                  img_size=args.img_size,
                  num_classes=num_classes,
                  trainable=False,
                  conf_thresh=args.conf_thresh,
                  nms_thresh=args.nms_thresh,
-                 num_heads=args.nheads,
-                 num_encoders=args.enc_layers,
-                 num_decoders=args.dec_layers,
-                 num_queries=args.num_queries,
-                 hidden_dim=args.hidden_dim,
-                 mlp_dim=args.mlp_dim,
-                 dropout=0.,
-                 aux_loss=not args.no_aux_loss,
+                 aux_loss=False,
                  backbone=args.backbone,
                  use_nms=args.use_nms).to(device)
-
 
     # load weight
     model.load_state_dict(torch.load(args.trained_model, map_location=device), strict=False)
     model.to(device).eval()
     print('Finished loading model!')
 
-    # evaluation
-    test(net=model, 
+    # run
+    test(args=args,
+        net=model, 
         device=device, 
-        testset=dataset,
-        transform=BaseTransform(input_size),
-        thresh=args.visual_threshold,
+        dataset=dataset,
+        transforms=ValTransforms(args.img_size),
+        vis_thresh=args.visual_threshold,
         class_colors=class_colors,
         class_names=class_names,
         class_indexs=class_indexs,
-        dataset=args.dataset
-        )
+        show=args.show,
+        dataset_name=args.dataset)

@@ -13,19 +13,19 @@ import torch.backends.cudnn as cudnn
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 
-from data import VOC_CLASSES, VOC_ROOT, VOCDetection
-from data import coco_root, COCODataset
-from data import BaseTransform, detection_collate
+from data.voc0712 import VOC_CLASSES, VOCDetection
+from data.coco2017 import COCODataset
+from data.transforms import TrainTransforms, ValTransforms
 
 from evaluator.cocoapi_evaluator import COCOAPIEvaluator
 from evaluator.vocapi_evaluator import VOCAPIEvaluator
 
 from utils import distributed_utils
-from utils.augmentations import BasicAugmentation, ColorAugmentation
 from utils.modules import ModelEMA
 from utils.matcher import build_matcher
 from utils.loss import build_criterion
 from utils.com_flops_params import FLOPs_and_Params
+from utils.misc import detection_collate
 
 from models.detr import DeTR
 
@@ -41,7 +41,7 @@ def parse_args():
                         help='initial learning rate')
     parser.add_argument('--lr_backbone', default=1e-5, type=float,
                         help='lr for backbone')
-    parser.add_argument('-size', '--img_size', default=640, type=int,
+    parser.add_argument('-size', '--img_size', default=800, type=int,
                         help='input size: [H, W].')
     parser.add_argument('--clip_max_norm', default=0.1, type=float,
                         help='gradient clipping max norm')
@@ -84,9 +84,9 @@ def parse_args():
     # model 
     parser.add_argument('-bk', '--backbone', default='r50', type=str, 
                         help='backbone')
-    parser.add_argument('--enc_layers', default=6, type=int,
+    parser.add_argument('--num_encoders', default=6, type=int,
                         help="Number of encoding layers in the transformer")
-    parser.add_argument('--dec_layers', default=6, type=int,
+    parser.add_argument('--num_decoders', default=6, type=int,
                         help="Number of decoding layers in the transformer")
     parser.add_argument('--mlp_dim', default=2048, type=int,
                         help="Intermediate size of the feedforward layers in the transformer blocks")
@@ -94,12 +94,14 @@ def parse_args():
                         help="Size of the embeddings (dimension of the transformer)")
     parser.add_argument('--dropout', default=0.1, type=float,
                         help="Dropout applied in the transformer")
-    parser.add_argument('--nheads', default=8, type=int,
+    parser.add_argument('--num_heads', default=8, type=int,
                         help="Number of attention heads inside the transformer's attentions")
     parser.add_argument('--num_queries', default=100, type=int,
                         help="Number of query slots")
     
     # dataset
+    parser.add_argument('--root', '--data_root', default='/mnt/share/ssd2/dataset',
+                        help='root to dataset')
     parser.add_argument('-d', '--dataset', default='coco',
                         help='voc or coco')
 
@@ -151,79 +153,16 @@ def train():
     os.makedirs(path_to_save, exist_ok=True)
     
     # dataset and evaluator
-    if args.dataset == 'voc':
-        data_dir = VOC_ROOT
-        num_classes = 20
-        dataset = VOCDetection(root=data_dir, 
-                               img_size=args.img_size,
-                               transform=BasicAugmentation(args.img_size),
-                               color_transform=ColorAugmentation(args.img_size),
-                               mosaic=args.mosaic,
-                               mixup=args.mixup)
-
-        evaluator = VOCAPIEvaluator(data_root=data_dir,
-                                    device=device,
-                                    transform=BaseTransform(args.img_size),
-                                    labelmap=VOC_CLASSES)
-
-    elif args.dataset == 'coco':
-        data_dir = coco_root
-        num_classes = 80
-        dataset = COCODataset(data_dir=data_dir,
-                              img_size=args.img_size,
-                              transform=BasicAugmentation(args.img_size),
-                              color_transformer=ColorAugmentation(args.img_size),
-                              mosaic=args.mosaic,
-                              mixup=args.mixup)
-
-        evaluator = COCOAPIEvaluator(data_dir=data_dir,
-                                     img_size=args.img_size,
-                                     device=device,
-                                     transform=BaseTransform(args.img_size))
-    
-    else:
-        print('unknow dataset !! Only support voc and coco !!')
-        exit(0)
-    
+    dataset, evaluator, num_classes = build_dataset(args, args.img_size, device)
     # dataloader
-    if args.distributed:
-        # dataloader
-        dataloader = torch.utils.data.DataLoader(
-                        dataset=dataset, 
-                        batch_size=args.batch_size, 
-                        collate_fn=detection_collate,
-                        num_workers=args.num_workers,
-                        pin_memory=True,
-                        sampler=torch.utils.data.distributed.DistributedSampler(dataset)
-                        )
-
-    else:
-        # dataloader
-        dataloader = torch.utils.data.DataLoader(
-                        dataset=dataset,
-                        shuffle=True,
-                        batch_size=args.batch_size, 
-                        collate_fn=detection_collate,
-                        num_workers=args.num_workers,
-                        pin_memory=True
-                        )
-
-    print('Training model on:', dataset.name)
-    print('The dataset size:', len(dataset))
-    print("----------------------------------------------------------")
-
+    dataloader = build_dataloader(args, dataset, detection_collate)
+    
     # build model
-    model = DeTR(device=device,
+    model = DeTR(args=args,
+                 device=device,
                  img_size=args.img_size,
                  num_classes=num_classes,
                  trainable=True,
-                 num_heads=args.nheads,
-                 num_encoders=args.enc_layers,
-                 num_decoders=args.dec_layers,
-                 num_queries=args.num_queries,
-                 hidden_dim=args.hidden_dim,
-                 mlp_dim=args.mlp_dim,
-                 dropout=args.dropout,
                  aux_loss=not args.no_aux_loss,
                  backbone=args.backbone).to(device).train()
     # build matcher
@@ -292,6 +231,10 @@ def train():
     
     best_map = 0.
     t0 = time.time()
+
+    print('Training model on:', dataset.name)
+    print('The dataset size:', len(dataset))
+    print("----------------------------------------------------------")
     # start train
     for epoch in range(args.start_epoch, args.max_epoch):
         # set epoch if DDP
@@ -417,22 +360,15 @@ def train():
                     # evaluate
                     evaluator.evaluate(model_eval)
 
-                    cur_map = evaluator.map if args.dataset == 'voc' else evaluator.ap50_95
+                    cur_map = evaluator.map
                     if cur_map > best_map:
                         # update best-map
                         best_map = cur_map
                         # save model
                         print('Saving state, epoch:', epoch + 1)
-                        try:
-                            torch.save(model_eval.state_dict(), os.path.join(path_to_save, 
-                                        'DeTR_' + repr(epoch + 1) + '_' + str(round(best_map*100, 1)) + '.pth'),
-                                        _use_new_zipfile_serialization=False
-                                        )  
-                        except:
-                            print('The version of Torch is lower than 1.7.0.')
-                            torch.save(model_eval.state_dict(), os.path.join(path_to_save, 
-                                        'DeTR_' + repr(epoch + 1) + '_' + str(round(best_map, 2)) + '.pth')
-                                        )  
+                        torch.save(model_eval.state_dict(), os.path.join(path_to_save, 
+                                    'DeTR_' + repr(epoch + 1) + '_' + str(round(best_map*100., 2)) + '.pth')
+                                    )  
                     if args.tfboard:
                         if args.dataset == 'voc':
                             tblogger.add_scalar('07test/mAP', evaluator.map, epoch)
@@ -450,6 +386,66 @@ def train():
     
     if args.tfboard:
         tblogger.close()
+
+
+def build_dataset(args, img_size, device):
+    if args.dataset == 'voc':
+        data_dir = os.path.join(args.root, 'VOCdevkit')
+        num_classes = 20
+        dataset = VOCDetection(
+                        data_dir=data_dir,
+                        img_size=img_size,
+                        transform=TrainTransforms(img_size))
+
+        evaluator = VOCAPIEvaluator(
+                        data_dir=data_dir,
+                        device=device,
+                        transform=ValTransforms(img_size))
+
+    elif args.dataset == 'coco':
+        data_dir = os.path.join(args.root, 'COCO')
+        num_classes = 80
+        dataset = COCODataset(
+                    data_dir=data_dir,
+                    transform=TrainTransforms(img_size))
+
+        evaluator = COCOAPIEvaluator(
+                        data_dir=data_dir,
+                        device=device,
+                        transform=ValTransforms(img_size)
+                        )
+    
+    else:
+        print('unknow dataset !! Only support voc and coco !!')
+        exit(0)
+
+    return dataset, evaluator, num_classes
+
+
+def build_dataloader(args, dataset, collate_fn=None):
+    # distributed
+    if args.distributed and args.num_gpu > 1:
+        # dataloader
+        dataloader = torch.utils.data.DataLoader(
+                        dataset=dataset, 
+                        batch_size=args.batch_size, 
+                        collate_fn=collate_fn,
+                        num_workers=args.num_workers,
+                        pin_memory=True,
+                        sampler=torch.utils.data.distributed.DistributedSampler(dataset)
+                        )
+
+    else:
+        # dataloader
+        dataloader = torch.utils.data.DataLoader(
+                        dataset=dataset, 
+                        shuffle=True,
+                        batch_size=args.batch_size, 
+                        collate_fn=collate_fn,
+                        num_workers=args.num_workers,
+                        pin_memory=True
+                        )
+    return dataloader
 
 
 def set_lr(optimizer, lr):

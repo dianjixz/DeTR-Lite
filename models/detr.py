@@ -1,27 +1,22 @@
 import torch
 import numpy as np
 import torch.nn as nn
-from .backbone import resnet18, resnet34, resnet50, resnet101
+from .backbone import resnet50, resnet101
 from .transformer import Transformer
 from utils.modules import MLP
 import utils.box_ops as box_ops
 import math
 
+
 class DeTR(nn.Module):
     def __init__(self, 
+                 args,
                  device,
-                 img_size=640,
+                 img_size=800,
                  num_classes=80,
                  trainable=False,
                  conf_thresh=0.01,
                  nms_thresh=0.6,
-                 num_heads=8,
-                 num_encoders=6,
-                 num_decoders=6,
-                 num_queries=100,
-                 hidden_dim=256,
-                 mlp_dim=2048,
-                 dropout=0.1,
                  aux_loss=False,
                  backbone='r50',
                  use_nms=False):
@@ -32,52 +27,47 @@ class DeTR(nn.Module):
         self.trainable = trainable
         self.conf_thresh = conf_thresh
         self.nms_thresh = nms_thresh
-        self.num_queries = num_queries
-        self.hidden_dim = hidden_dim
-        self.dropout = dropout
+        self.num_queries = args.num_queries
         self.aux_loss = aux_loss
         self.use_nms = use_nms
 
         # object query
-        self.query_embed = nn.Embedding(num_queries, hidden_dim)
+        self.query_embed = nn.Embedding(self.num_queries, args.hidden_dim)
+        # position embedding
+        self.pos_embed = self.position_embedding(num_pos_feats=args.hidden_dim//2, normalize=True)
 
         # backbone
-        if backbone == 'r18':
-            self.backbone = resnet18(pretrained=trainable, freeze_bn=trainable)
-            c5 = 512
-        elif backbone == 'r34':
-            self.backbone = resnet34(pretrained=trainable, freeze_bn=trainable)
-            c5 = 512
-        elif backbone == 'r50':
+        if backbone == 'r50':
             self.backbone = resnet50(pretrained=trainable, freeze_bn=trainable)
+            self.stride = 32
             c5 = 2048
         elif backbone == 'r101':
             self.backbone = resnet101(pretrained=trainable, freeze_bn=trainable)
+            self.stride = 32
             c5 = 2048
         
         # to compress channel of C5
-        self.input_proj = nn.Conv2d(c5, hidden_dim, kernel_size=1)
+        self.input_proj = nn.Conv2d(c5, args.hidden_dim, kernel_size=1)
 
-        
         # transformer
-        self.transformer = Transformer(dim=hidden_dim,
-                                       num_encoders=num_encoders,
-                                       num_decoders=num_decoders,
-                                       num_heads=num_heads,
-                                       dim_head=hidden_dim // num_heads,
-                                       mlp_dim=mlp_dim,
-                                       dropout=self.dropout,
+        self.transformer = Transformer(dim=args.hidden_dim,
+                                       num_encoders=args.num_encoders,
+                                       num_decoders=args.num_decoders,
+                                       num_heads=args.num_heads,
+                                       dim_head=args.hidden_dim // args.num_heads,
+                                       mlp_dim=args.mlp_dim,
+                                       dropout=args.dropout,
                                        act='relu',
                                        return_intermediate=True)
 
         # det
-        self.cls_det = nn.Linear(hidden_dim, num_classes + 1)
-        self.reg_det = MLP(hidden_dim, hidden_dim, 4, 3)
+        self.cls_det = nn.Linear(args.hidden_dim, num_classes + 1)
+        self.reg_det = MLP(args.hidden_dim, args.hidden_dim, 4, 3)
 
         
     # Position Embedding
-    def position_embedding(self, xs, num_pos_feats=128, temperature=10000, normalize=False, scale=None):
-        hs, ws = xs.shape[2:]
+    def position_embedding(self, num_pos_feats=128, temperature=10000, normalize=False, scale=None):
+        hs = ws = self.img_size // self.stride
         
         if scale is not None and normalize is False:
             raise ValueError("normalize should be True if scale is passed")
@@ -159,11 +149,9 @@ class DeTR(nn.Module):
         x = self.backbone(x)
         x = self.input_proj(x)
 
-        # position embedding
-        pos_embed = self.position_embedding(x, num_pos_feats=self.hidden_dim//2, normalize=True)
 
         # transformer
-        h = self.transformer(x, pos_embed, self.query_embed.weight)[0]
+        h = self.transformer(x, self.pos_embed, self.query_embed.weight)[0]
 
         # output: [M, B, N, C] where M = num_decoder since we use all intermediate outputs of decoder
         outputs_class = self.cls_det(h)
