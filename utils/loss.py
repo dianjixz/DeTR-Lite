@@ -176,7 +176,7 @@ def build_criterion(args, device, matcher, num_classes):
     # TODO this is a hack
     if not args.no_aux_loss:
         aux_weight_dict = {}
-        for i in range(args.dec_layers - 1):
+        for i in range(args.num_decoders - 1):
             aux_weight_dict.update({k + f'_{i}': v for k, v in weight_dict.items()})
         weight_dict.update(aux_weight_dict)
 

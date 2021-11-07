@@ -106,10 +106,6 @@ def parse_args():
                         help='voc or coco')
 
     # train trick
-    parser.add_argument('--mosaic', action='store_true', default=False,
-                        help='use mosaic augmentation')
-    parser.add_argument('--mixup', action='store_true', default=False,
-                        help='use mixup augmentation')
     parser.add_argument('--ema', action='store_true', default=False,
                         help='use ema training trick')
     parser.add_argument('--no_warmup', action='store_true', default=False,
@@ -232,6 +228,7 @@ def train():
     best_map = 0.
     t0 = time.time()
 
+    print("----------------------------------------------------------")
     print('Training model on:', dataset.name)
     print('The dataset size:', len(dataset))
     print("----------------------------------------------------------")
@@ -394,7 +391,6 @@ def build_dataset(args, img_size, device):
         num_classes = 20
         dataset = VOCDetection(
                         data_dir=data_dir,
-                        img_size=img_size,
                         transform=TrainTransforms(img_size))
 
         evaluator = VOCAPIEvaluator(

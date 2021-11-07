@@ -137,10 +137,6 @@ class COCODataset(Dataset):
                 if xmax > xmin and ymax > ymin:
                     label_ind = anno['category_id']
                     cls_id = self.class_ids.index(label_ind)
-                    xmin /= width
-                    ymin /= height
-                    xmax /= width
-                    ymax /= height
 
                     annotation.append([xmin, ymin, xmax, ymax, cls_id])  # [xmin, ymin, xmax, ymax, label_ind]
             else:
@@ -178,12 +174,19 @@ if __name__ == "__main__":
     np.random.seed(0)
     class_colors = [(np.random.randint(255),
                      np.random.randint(255),
-                     np.random.randint(255)) for _ in range(20)]
+                     np.random.randint(255)) for _ in range(80)]
+    rgb_mean = np.array(dataset.transform.mean)
+    rgb_std = np.array(dataset.transform.std)
     print('Data length: ', len(dataset))
     for i in range(1000):
+        # load an image
         img, target = dataset.pull_item(i)
-        img = img.permute(1,2,0).numpy()[:, :, (2, 1, 0)].astype(np.uint8)
-        img = img.copy()
+        img = img.permute(1,2,0).numpy()
+        img = (img*rgb_std + rgb_mean) * 255
+        # from rgb to bgr
+        img = img[:, :, (2, 1, 0)]
+        img = img.astype(np.uint8).copy()
+        # load a target
         cls_gt = target['labels'].tolist()
         box_gt = target['boxes'].tolist()
         for i in range(len(cls_gt)):

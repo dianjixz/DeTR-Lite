@@ -78,7 +78,7 @@ class RandomHorizontalFlip(object):
             if target is not None:
                 h, w = target["orig_size"]
                 if "boxes" in target:
-                    boxes = target["boxes"].copy()
+                    boxes = target["boxes"].clone()
                     boxes[..., [0, 2]] = w - boxes[..., [2, 0]]
                     target["boxes"] = boxes
 

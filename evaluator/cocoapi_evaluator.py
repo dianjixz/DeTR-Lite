@@ -34,7 +34,6 @@ class COCOAPIEvaluator():
             name='val2017'
 
         self.dataset = COCODataset(data_dir=data_dir,
-                                   img_size=img_size,
                                    json_file=json_file,
                                    transform=None,
                                    name=name)

@@ -64,7 +64,7 @@ class VOCAnnotationTransform(object):
             for i, pt in enumerate(pts):
                 cur_pt = int(bbox.find(pt).text) - 1
                 # scale height or width
-                cur_pt = cur_pt / width if i % 2 == 0 else cur_pt / height
+                cur_pt = cur_pt if i % 2 == 0 else cur_pt
                 bndbox.append(cur_pt)
             label_idx = self.class_to_ind[name]
             bndbox.append(label_idx)
@@ -195,11 +195,18 @@ if __name__ == "__main__":
     class_colors = [(np.random.randint(255),
                      np.random.randint(255),
                      np.random.randint(255)) for _ in range(20)]
+    rgb_mean = np.array(dataset.transform.mean)
+    rgb_std = np.array(dataset.transform.std)
     print('Data length: ', len(dataset))
     for i in range(1000):
+        # load an image
         img, target = dataset.pull_item(i)
-        img = img.permute(1,2,0).numpy()[:, :, (2, 1, 0)].astype(np.uint8)
-        img = img.copy()
+        img = img.permute(1,2,0).numpy()
+        img = (img*rgb_std + rgb_mean) * 255
+        # from rgb to bgr
+        img = img[:, :, (2, 1, 0)]
+        img = img.astype(np.uint8).copy()
+        # load a target
         cls_gt = target['labels'].tolist()
         box_gt = target['boxes'].tolist()
         for i in range(len(cls_gt)):

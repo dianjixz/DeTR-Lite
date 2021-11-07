@@ -31,11 +31,6 @@ class DeTR(nn.Module):
         self.aux_loss = aux_loss
         self.use_nms = use_nms
 
-        # object query
-        self.query_embed = nn.Embedding(self.num_queries, args.hidden_dim)
-        # position embedding
-        self.pos_embed = self.position_embedding(num_pos_feats=args.hidden_dim//2, normalize=True)
-
         # backbone
         if backbone == 'r50':
             self.backbone = resnet50(pretrained=trainable, freeze_bn=trainable)
@@ -48,6 +43,11 @@ class DeTR(nn.Module):
         
         # to compress channel of C5
         self.input_proj = nn.Conv2d(c5, args.hidden_dim, kernel_size=1)
+
+        # object query
+        self.query_embed = nn.Embedding(self.num_queries, args.hidden_dim)
+        # position embedding
+        self.pos_embed = self.position_embedding(num_pos_feats=args.hidden_dim//2, normalize=True)
 
         # transformer
         self.transformer = Transformer(dim=args.hidden_dim,

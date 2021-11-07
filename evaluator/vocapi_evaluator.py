@@ -16,8 +16,8 @@ import xml.etree.ElementTree as ET
 
 class VOCAPIEvaluator():
     """ VOC AP Evaluation class """
-    def __init__(self, data_root, device, transform, labelmap=VOC_CLASSES, set_type='test', year='2007', display=False):
-        self.data_root = data_root
+    def __init__(self, data_dir, device, transform, labelmap=VOC_CLASSES, set_type='test', year='2007', display=False):
+        self.data_dir = data_dir
         self.device = device
         self.transform = transform
         self.labelmap = labelmap
@@ -26,14 +26,14 @@ class VOCAPIEvaluator():
         self.display = display
 
         # path
-        self.devkit_path = data_root + 'VOC' + year
-        self.annopath = os.path.join(data_root, 'VOC2007', 'Annotations', '%s.xml')
-        self.imgpath = os.path.join(data_root, 'VOC2007', 'JPEGImages', '%s.jpg')
-        self.imgsetpath = os.path.join(data_root, 'VOC2007', 'ImageSets', 'Main', set_type+'.txt')
+        self.devkit_path = data_dir + 'VOC' + year
+        self.annopath = os.path.join(data_dir, 'VOC2007', 'Annotations', '%s.xml')
+        self.imgpath = os.path.join(data_dir, 'VOC2007', 'JPEGImages', '%s.jpg')
+        self.imgsetpath = os.path.join(data_dir, 'VOC2007', 'ImageSets', 'Main', set_type+'.txt')
         self.output_dir = self.get_output_dir('voc_eval/', self.set_type)
 
         # dataset
-        self.dataset = VOCDetection(root=data_root, 
+        self.dataset = VOCDetection(data_dir=data_dir, 
                                     image_sets=[('2007', set_type)],
                                     transform=None
                                     )
