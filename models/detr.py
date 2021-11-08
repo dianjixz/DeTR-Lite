@@ -3,7 +3,7 @@ import numpy as np
 import torch.nn as nn
 from .backbone import resnet50, resnet101
 from .transformer import Transformer
-from utils.modules import MLP
+from .mlp import MLP
 import utils.box_ops as box_ops
 import math
 

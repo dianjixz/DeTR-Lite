@@ -13,7 +13,7 @@ import torch.backends.cudnn as cudnn
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 
-from data.voc0712 import VOC_CLASSES, VOCDetection
+from data.voc0712 import VOCDetection
 from data.coco2017 import COCODataset
 from data.transforms import TrainTransforms, ValTransforms
 
@@ -21,11 +21,10 @@ from evaluator.cocoapi_evaluator import COCOAPIEvaluator
 from evaluator.vocapi_evaluator import VOCAPIEvaluator
 
 from utils import distributed_utils
-from utils.modules import ModelEMA
 from utils.matcher import build_matcher
 from utils.loss import build_criterion
 from utils.com_flops_params import FLOPs_and_Params
-from utils.misc import detection_collate
+from utils.misc import detection_collate, ModelEMA
 
 from models.detr import DeTR
 
