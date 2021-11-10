@@ -2,7 +2,7 @@ import torch
 import numpy as np
 import torch.nn as nn
 from .backbone import resnet50, resnet101
-from .transformer import Transformer
+from .transformer import build_transformer
 from .mlp import MLP
 import utils.box_ops as box_ops
 import math
@@ -50,15 +50,7 @@ class DeTR(nn.Module):
         self.pos_embed = self.position_embedding(num_pos_feats=args.hidden_dim//2, normalize=True)
 
         # transformer
-        self.transformer = Transformer(dim=args.hidden_dim,
-                                       num_encoders=args.num_encoders,
-                                       num_decoders=args.num_decoders,
-                                       num_heads=args.num_heads,
-                                       dim_head=args.hidden_dim // args.num_heads,
-                                       mlp_dim=args.mlp_dim,
-                                       dropout=args.dropout,
-                                       act='relu',
-                                       return_intermediate=True)
+        self.transformer = build_transformer(args)
 
         # det
         self.cls_det = nn.Linear(args.hidden_dim, num_classes + 1)
@@ -151,7 +143,7 @@ class DeTR(nn.Module):
 
 
         # transformer
-        h = self.transformer(x, self.pos_embed, self.query_embed.weight)[0]
+        h = self.transformer(x, self.query_embed.weight, self.pos_embed)[0]
 
         # output: [M, B, N, C] where M = num_decoder since we use all intermediate outputs of decoder
         outputs_class = self.cls_det(h)

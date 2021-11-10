@@ -83,6 +83,8 @@ def parse_args():
     # model 
     parser.add_argument('-bk', '--backbone', default='r50', type=str, 
                         help='backbone')
+
+    # Transformer
     parser.add_argument('--num_encoders', default=6, type=int,
                         help="Number of encoding layers in the transformer")
     parser.add_argument('--num_decoders', default=6, type=int,
@@ -97,7 +99,8 @@ def parse_args():
                         help="Number of attention heads inside the transformer's attentions")
     parser.add_argument('--num_queries', default=100, type=int,
                         help="Number of query slots")
-    
+    parser.add_argument('--pre_norm', action='store_true', default=False,
+                        help="pre_norm")
     # dataset
     parser.add_argument('-root', '--data_root', default='/mnt/share/ssd2/dataset',
                         help='root to dataset')
