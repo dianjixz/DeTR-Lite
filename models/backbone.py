@@ -257,6 +257,18 @@ def resnet152(pretrained=False, freeze_bn=False, **kwargs):
 
     return model
 
+
+def build_backbone(pretrained=False, freeze_bn=False, model='r18'):
+    if model == 'r18':
+        return resnet18(pretrained=pretrained, freeze_bn=freeze_bn), 512
+    elif model == 'r34':
+        return resnet34(pretrained=pretrained, freeze_bn=freeze_bn), 512
+    elif model == 'r50':
+        return resnet50(pretrained=pretrained, freeze_bn=freeze_bn), 2048
+    elif model == 'r101':
+        return resnet101(pretrained=pretrained, freeze_bn=freeze_bn), 2048
+
+
 if __name__=='__main__':
     #model = torchvision.models.resnet50()
     print("found ", torch.cuda.device_count(), " GPU(s)")

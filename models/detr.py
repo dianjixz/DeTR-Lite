@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 import torch.nn as nn
-from .backbone import resnet50, resnet101
+from .backbone import build_backbone
 from .transformer import build_transformer
 from .mlp import MLP
 import utils.box_ops as box_ops
@@ -18,7 +18,6 @@ class DeTR(nn.Module):
                  conf_thresh=0.01,
                  nms_thresh=0.6,
                  aux_loss=False,
-                 backbone='r50',
                  use_nms=False):
         super().__init__()
         self.device = device
@@ -32,17 +31,11 @@ class DeTR(nn.Module):
         self.use_nms = use_nms
 
         # backbone
-        if backbone == 'r50':
-            self.backbone = resnet50(pretrained=trainable, freeze_bn=trainable)
-            self.stride = 32
-            c5 = 2048
-        elif backbone == 'r101':
-            self.backbone = resnet101(pretrained=trainable, freeze_bn=trainable)
-            self.stride = 32
-            c5 = 2048
+        self.backbone, feature_channels = build_backbone(pretrained=trainable, freeze_bn=trainable, model=args.backbone)
+        self.stride = 32
         
         # to compress channel of C5
-        self.input_proj = nn.Conv2d(c5, args.hidden_dim, kernel_size=1)
+        self.input_proj = nn.Conv2d(feature_channels, args.hidden_dim, kernel_size=1)
 
         # object query
         self.query_embed = nn.Embedding(self.num_queries, args.hidden_dim)
@@ -140,7 +133,6 @@ class DeTR(nn.Module):
         # backbone
         x = self.backbone(x)
         x = self.input_proj(x)
-
 
         # transformer
         h = self.transformer(x, self.query_embed.weight, self.pos_embed)[0]
