@@ -5,7 +5,7 @@ import time
 import numpy as np
 import torch
 
-from data.coco2017 import coco_class_labels, coco_class_index
+from data.coco import coco_class_labels, coco_class_index
 from data.transforms import ValTransforms
 from models.detr import DeTR
 

@@ -1,7 +1,7 @@
 import json
 import tempfile
 
-from data.coco2017 import *
+from data.coco import *
 from data import *
 
 from pycocotools.cocoeval import COCOeval

@@ -6,7 +6,8 @@ import argparse
 import torch
 import torch.backends.cudnn as cudnn
 
-from data import *
+from data.voc import VOCDetection, VOC_CLASSES
+from data.coco import COCODataset, coco_class_index, coco_class_labels
 from data.transforms import ValTransforms
 
 from models.detr import DeTR

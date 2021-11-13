@@ -13,8 +13,8 @@ import torch.backends.cudnn as cudnn
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 
-from data.voc0712 import VOCDetection
-from data.coco2017 import COCODataset
+from data.voc import VOCDetection
+from data.coco import COCODataset
 from data.transforms import TrainTransforms, ValTransforms
 
 from evaluator.cocoapi_evaluator import COCOAPIEvaluator
