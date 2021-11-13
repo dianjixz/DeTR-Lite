@@ -6,11 +6,8 @@ and the implementation of this code for practice is not optimal.
 """
 
 
-
 import torch
 import torch.nn as nn
-
-
 
 
 # FFN

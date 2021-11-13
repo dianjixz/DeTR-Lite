@@ -161,17 +161,22 @@ def train():
                  img_size=args.img_size,
                  num_classes=num_classes,
                  trainable=True,
-                 aux_loss=not args.no_aux_loss,
-                 backbone=args.backbone).to(device).train()
+                 aux_loss=not args.no_aux_loss).to(device).train()
+    model = model.to(device)
     # build matcher
     matcher = build_matcher(args)
     # build criterion
     criterion = build_criterion(args, device, matcher, num_classes)
     criterion.train()
 
-    # compute FLOPs and Params
-    FLOPs_and_Params(model, args.img_size, device)
-    
+    if distributed_utils.get_rank() == 0:
+        model.trainable = False
+        model.eval()
+        # compute FLOPs and Params
+        FLOPs_and_Params(model, args.img_size, device)
+        model.trainable = True
+        model.train()
+
     # DDP
     model_without_ddp = model
     if args.distributed:
