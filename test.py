@@ -203,7 +203,7 @@ if __name__ == '__main__':
                  trainable=False,
                  conf_thresh=args.conf_thresh,
                  nms_thresh=args.nms_thresh,
-                 aux_loss=False,
+                 aux_loss=not args.no_aux_loss,
                  use_nms=args.use_nms).to(device)
 
     # load weight

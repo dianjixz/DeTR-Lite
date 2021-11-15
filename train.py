@@ -161,7 +161,8 @@ def train():
                  img_size=args.img_size,
                  num_classes=num_classes,
                  trainable=True,
-                 aux_loss=not args.no_aux_loss).to(device).train()
+                 aux_loss=not args.no_aux_loss,
+                 use_nms=not args.no_aux_loss).to(device).train()
     model = model.to(device)
     # build matcher
     matcher = build_matcher(args)
