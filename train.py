@@ -46,6 +46,8 @@ def parse_args():
                         help='gradient clipping max norm')
     parser.add_argument('--max_epoch', type=int, default=150, 
                         help='max epoch to train')
+    parser.add_argument('--lr_drop', type=int, default=100, 
+                        help='lr decay epoch')
     parser.add_argument('--eval_epoch', type=int, default=10, 
                         help='interval between evaluations')
     parser.add_argument('--vis', action='store_true', default=False,
@@ -114,8 +116,6 @@ def parse_args():
                         help='do not use warmup')
     parser.add_argument('--wp_epoch', type=int, default=1, 
                         help='wram-up epoch')
-    parser.add_argument('--lr_drop', type=int, default=100, 
-                        help='lr decay epoch')
 
     # train DDP
     parser.add_argument('-dist', '--distributed', action='store_true', default=False,
