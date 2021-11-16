@@ -38,8 +38,8 @@ parser.add_argument('--nms_thresh', default=0.50, type=float,
                     help='NMS threshold')
 parser.add_argument('--use_nms', action='store_true', default=False, 
                     help='use nms.')
-parser.add_argument('--no_aux_loss', action='store_true',
-                    help="Disables auxiliary decoding losses (loss at each layer)")
+parser.add_argument('--aux_loss', action='store_true',
+                    help="Use auxiliary decoding losses (loss at each layer)")
 # Transformer
 parser.add_argument('--num_encoders', default=6, type=int,
                     help="Number of encoding layers in the transformer")
@@ -184,7 +184,7 @@ if __name__ == '__main__':
         num_classes = 80
         dataset = COCODataset(
                     data_dir=data_dir,
-                    json_file='instances_val2017.json')
+                    image_set='val2017')
     
     else:
         print('unknow dataset !! Only support voc and coco !!')
@@ -203,7 +203,7 @@ if __name__ == '__main__':
                  trainable=False,
                  conf_thresh=args.conf_thresh,
                  nms_thresh=args.nms_thresh,
-                 aux_loss=not args.no_aux_loss,
+                 aux_loss=args.aux_loss,
                  use_nms=args.use_nms).to(device)
 
     # load weight

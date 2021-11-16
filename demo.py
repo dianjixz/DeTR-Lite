@@ -37,7 +37,7 @@ def parse_args():
                         help='NMS threshold')
     parser.add_argument('--use_nms', action='store_true', default=False, 
                         help='use nms.')
-    parser.add_argument('--no_aux_loss', action='store_true',
+    parser.add_argument('--aux_loss', action='store_true',
                         help="Disables auxiliary decoding losses (loss at each layer)")
     # Transformer                    
     parser.add_argument('--num_encoders', default=6, type=int,
@@ -232,7 +232,7 @@ def run():
                  trainable=False,
                  conf_thresh=args.conf_thresh,
                  nms_thresh=args.nms_thresh,
-                 aux_loss=False,
+                 aux_loss=args.aux_loss,
                  use_nms=args.use_nms).to(device)
 
     # load weight

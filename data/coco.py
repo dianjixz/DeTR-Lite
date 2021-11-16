@@ -36,8 +36,7 @@ class COCODataset(Dataset):
     def __init__(self, 
                  data_dir=None, 
                  transform=None, 
-                 json_file='instances_train2017.json',
-                 name='train2017'):
+                 image_set='train2017'):
         """
         COCO dataset initialization. Annotation data are read into memory by COCO API.
         Args:
@@ -48,12 +47,17 @@ class COCODataset(Dataset):
             min_size (int): bounding boxes smaller than this are ignored
             debug (bool): if True, only one data id is selected from the dataset
         """
+        if image_set == 'train2017':
+            self.json_file='instances_train2017.json'
+        elif image_set == 'val2017':
+            self.json_file='instances_val2017.json'
+        elif image_set == 'test2017':
+            self.json_file='image_info_test-dev2017.json'
+        self.image_set = image_set
         self.data_dir = data_dir
-        self.json_file = json_file
         self.coco = COCO(os.path.join(self.data_dir, 'annotations', self.json_file))
         self.ids = self.coco.getImgIds()
         self.class_ids = sorted(self.coco.getCatIds())
-        self.name = name
         # augmentation
         self.transform = transform
 
@@ -69,7 +73,7 @@ class COCODataset(Dataset):
 
     def pull_image(self, index):
         id_ = self.ids[index]
-        img_file = os.path.join(self.data_dir, self.name,
+        img_file = os.path.join(self.data_dir, self.image_set,
                                 '{:012}'.format(id_) + '.jpg')
         img = cv2.imread(img_file)
 
@@ -110,7 +114,7 @@ class COCODataset(Dataset):
         annotations = self.coco.loadAnns(anno_ids)
 
         # load an image
-        img_file = os.path.join(self.data_dir, self.name,
+        img_file = os.path.join(self.data_dir, self.image_set,
                                 '{:012}'.format(index) + '.jpg')
         img = cv2.imread(img_file)
         

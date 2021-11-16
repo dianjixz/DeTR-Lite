@@ -27,16 +27,12 @@ class COCOAPIEvaluator():
         """
         self.testset = testset
         if self.testset:
-            json_file='image_info_test-dev2017.json'
-            name = 'test2017'
+            image_set = 'test2017'
         else:
-            json_file='instances_val2017.json'
-            name='val2017'
+            image_set='val2017'
 
         self.dataset = COCODataset(data_dir=data_dir,
-                                   json_file=json_file,
-                                   transform=None,
-                                   name=name)
+                                   image_set=image_set)
         self.transform = transform
         self.device = device
         self.map = 0.

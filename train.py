@@ -74,17 +74,19 @@ def parse_args():
                         help="giou box coefficient in the matching cost")
 
     # Loss
-    parser.add_argument('--no_aux_loss', action='store_true',
-                        help="Disables auxiliary decoding losses (loss at each layer)")
+    parser.add_argument('--aux_loss', action='store_true',
+                        help="Use auxiliary decoding losses (loss at each layer)")
     parser.add_argument('--dice_loss_coef', default=1, type=float)
     parser.add_argument('--bbox_loss_coef', default=5, type=float)
     parser.add_argument('--giou_loss_coef', default=2, type=float)
     parser.add_argument('--eos_coef', default=0.1, type=float,
                         help="Relative classification weight of the no-object class")
 
-    # model 
+    # Model 
     parser.add_argument('-bk', '--backbone', default='r50', type=str, 
                         help='backbone')
+    parser.add_argument('--use_nms', action='store_true',
+                        help="use nms to eval")
 
     # Transformer
     parser.add_argument('--num_encoders', default=6, type=int,
@@ -161,8 +163,8 @@ def train():
                  img_size=args.img_size,
                  num_classes=num_classes,
                  trainable=True,
-                 aux_loss=not args.no_aux_loss,
-                 use_nms=not args.no_aux_loss).to(device).train()
+                 aux_loss=args.aux_loss,
+                 use_nms=args.use_nms).to(device)
     model = model.to(device)
     # build matcher
     matcher = build_matcher(args)
@@ -403,7 +405,8 @@ def build_dataset(args, img_size, device):
         num_classes = 80
         dataset = COCODataset(
                     data_dir=data_dir,
-                    transform=TrainTransforms(img_size))
+                    transform=TrainTransforms(img_size),
+                    image_set='train2017')
 
         evaluator = COCOAPIEvaluator(
                         data_dir=data_dir,
