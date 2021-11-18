@@ -105,6 +105,9 @@ def parse_args():
                         help="Number of query slots")
     parser.add_argument('--pre_norm', action='store_true', default=False,
                         help="pre_norm")
+    parser.add_argument('--batch_first', action='store_true', default=False,
+                        help="batch first in MultiHeadAttention.")
+
     # dataset
     parser.add_argument('-root', '--data_root', default='/mnt/share/ssd2/dataset',
                         help='root to dataset')
@@ -239,7 +242,7 @@ def train():
     t0 = time.time()
 
     print("----------------------------------------------------------")
-    print('Training model on:', dataset.name)
+    print('Training model on:', args.dataset)
     print('The dataset size:', len(dataset))
     print("----------------------------------------------------------")
     # start train

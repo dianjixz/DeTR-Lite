@@ -20,7 +20,7 @@ class Transformer(nn.Module):
     def __init__(self, d_model=512, nhead=8, num_encoder_layers=6,
                  num_decoder_layers=6, dim_feedforward=2048, dropout=0.1,
                  activation="relu", normalize_before=False,
-                 return_intermediate_dec=False):
+                 return_intermediate_dec=False, batch_first=False):
         super().__init__()
 
         encoder_layer = TransformerEncoderLayer(d_model, nhead, dim_feedforward,
@@ -38,6 +38,7 @@ class Transformer(nn.Module):
 
         self.d_model = d_model
         self.nhead = nhead
+        self.batch_first = batch_first
 
     def _reset_parameters(self):
         for p in self.parameters():
@@ -47,16 +48,31 @@ class Transformer(nn.Module):
     def forward(self, src, query_embed, pos_embed, mask=None):
         # flatten NxCxHxW to HWxNxC
         bs, c, h, w = src.shape
-        src = src.flatten(2).permute(2, 0, 1)
-        pos_embed = pos_embed.flatten(2).permute(2, 0, 1)
-        query_embed = query_embed.unsqueeze(1).repeat(1, bs, 1)
-        mask = mask.flatten(1) if mask is not None else None
+        if self.batch_first:
+            # [B, C, H, W] -> [B, C, N] -> [B, N, C]
+            src = src.flatten(2).permute(0, 2, 1).contiguous()
+            # [B, C, H, W] -> [B, C, N] -> [B, N, C]
+            pos_embed = pos_embed.flatten(2).permute(0, 2, 1).contiguous()
+            # [Nq, C] -> [1, Nq, C] -> [B, Nq, C]
+            query_embed = query_embed.unsqueeze(0).repeat(bs, 1, 1)
+            mask = mask.flatten(1) if mask is not None else None
+        else:
+            # [B, C, H, W] -> [B, C, N] -> [N, B, C]
+            src = src.flatten(2).permute(2, 0, 1).contiguous()
+            # [B, C, H, W] -> [B, C, N] -> [N, B, C]
+            pos_embed = pos_embed.flatten(2).permute(2, 0, 1).contiguous()
+            # [Nq, C] -> [Nq, 1, C] -> [Nq, B, C]
+            query_embed = query_embed.unsqueeze(1).repeat(1, bs, 1)
+            mask = mask.flatten(1) if mask is not None else None
 
         tgt = torch.zeros_like(query_embed)
         memory = self.encoder(src, src_key_padding_mask=mask, pos=pos_embed)
         hs = self.decoder(tgt, memory, memory_key_padding_mask=mask,
                           pos=pos_embed, query_pos=query_embed)
-        return hs.transpose(1, 2), memory.permute(1, 2, 0).view(bs, c, h, w)
+        if self.batch_first:
+            return hs, memory.permute(0, 2, 1).view(bs, c, h, w)
+        else:
+            return hs.transpose(1, 2), memory.permute(1, 2, 0).view(bs, c, h, w)
 
 
 class TransformerEncoder(nn.Module):
@@ -129,7 +145,7 @@ class TransformerEncoderLayer(nn.Module):
     def __init__(self, d_model, nhead, dim_feedforward=2048, dropout=0.1,
                  activation="relu", normalize_before=False):
         super().__init__()
-        self.self_attn = nn.MultiheadAttention(d_model, nhead, dropout=dropout)
+        self.self_attn = nn.MultiheadAttention(d_model, nhead, dropout=dropout, batch_first=True)
         # Implementation of Feedforward model
         self.linear1 = nn.Linear(d_model, dim_feedforward)
         self.dropout = nn.Dropout(dropout)
@@ -189,8 +205,8 @@ class TransformerDecoderLayer(nn.Module):
     def __init__(self, d_model, nhead, dim_feedforward=2048, dropout=0.1,
                  activation="relu", normalize_before=False):
         super().__init__()
-        self.self_attn = nn.MultiheadAttention(d_model, nhead, dropout=dropout)
-        self.multihead_attn = nn.MultiheadAttention(d_model, nhead, dropout=dropout)
+        self.self_attn = nn.MultiheadAttention(d_model, nhead, dropout=dropout, batch_first=True)
+        self.multihead_attn = nn.MultiheadAttention(d_model, nhead, dropout=dropout, batch_first=True)
         # Implementation of Feedforward model
         self.linear1 = nn.Linear(d_model, dim_feedforward)
         self.dropout = nn.Dropout(dropout)
@@ -283,6 +299,7 @@ def build_transformer(args):
         num_decoder_layers=args.num_decoders,
         normalize_before=args.pre_norm,
         return_intermediate_dec=True,
+        batch_first=args.batch_first
     )
 
 
