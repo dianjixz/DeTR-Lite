@@ -6,6 +6,7 @@ python train.py \
         --img_size 640 \
         --max_epoch 150 \
         --lr_drop 100 \
+        --eval_epoch 2 \
         --aux_loss \
         --use_nms \
         # --batch_first \
