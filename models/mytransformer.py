@@ -251,5 +251,5 @@ def build_transformer(args):
         dim_head=args.hidden_dim // args.num_heads,
         mlp_dim=args.mlp_dim,
         dropout=args.dropout,
-        return_intermediate=True
+        return_intermediate=args.aux_loss
     )
